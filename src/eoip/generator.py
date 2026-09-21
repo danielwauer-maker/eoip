@@ -365,6 +365,8 @@ class ERPGenerator:
         credit_line_rows: list[dict[str, Any]] = []
         invoice_header_lookup = sales_invoice_header.set_index("sales_invoice_id")
         selected = self.rng.random(len(sales_invoice_line)) < return_rate
+        if len(sales_invoice_line) > 0 and not bool(selected.any()):
+            selected[int(self.rng.integers(0, len(sales_invoice_line)))] = True
 
         credit_seq = 1
         for _, invoice_line in sales_invoice_line.loc[selected].iterrows():
@@ -461,6 +463,15 @@ class ERPGenerator:
                     frame[column] = pd.Series(dtype="object")
                 frame = frame[columns]
 
+        self._calibrate_sales_monetary_scale(
+            masters,
+            sales_order_line,
+            sales_invoice_header,
+            sales_invoice_line,
+            sales_credit_memo_header,
+            sales_credit_memo_line,
+        )
+
         return {
             "sales_order_header": sales_order_header,
             "sales_order_line": sales_order_line,
@@ -469,6 +480,80 @@ class ERPGenerator:
             "sales_credit_memo_header": sales_credit_memo_header,
             "sales_credit_memo_line": sales_credit_memo_line,
         }
+
+    def _calibrate_sales_monetary_scale(
+        self,
+        masters: dict[str, pd.DataFrame],
+        sales_order_line: pd.DataFrame,
+        sales_invoice_header: pd.DataFrame,
+        sales_invoice_line: pd.DataFrame,
+        sales_credit_memo_header: pd.DataFrame,
+        sales_credit_memo_line: pd.DataFrame,
+    ) -> None:
+        invoice_net = float(sales_invoice_line["net_line_amount"].sum())
+        credit_net = (
+            float(sales_credit_memo_line["net_credit_amount"].sum())
+            if not sales_credit_memo_line.empty
+            else 0.0
+        )
+        current_net_sales = invoice_net - credit_net
+        if current_net_sales <= 0:
+            raise RuntimeError("Cannot calibrate sales because generated net sales are not positive.")
+
+        history_years = max(1.0 / 12.0, (self.end_date - self.start_date).days / 365.25)
+        target_net_sales = self.company.annual_revenue_eur * history_years * self.scale_factor
+        factor = target_net_sales / current_net_sales
+
+        product = masters["product"]
+        for column in ["standard_sales_price", "standard_unit_cost"]:
+            product[column] = (product[column].astype(float) * factor).round(2)
+
+        for column in ["unit_price", "line_discount_amount", "net_line_amount"]:
+            sales_order_line[column] = (sales_order_line[column].astype(float) * factor).round(2)
+
+        for column in ["unit_price", "gross_line_amount", "discount_amount", "net_line_amount"]:
+            sales_invoice_line[column] = (sales_invoice_line[column].astype(float) * factor).round(2)
+
+        invoice_totals = (
+            sales_invoice_line.groupby("sales_invoice_id", as_index=False)["net_line_amount"].sum()
+        )
+        invoice_totals["total_net_amount"] = invoice_totals["net_line_amount"].round(2)
+        invoice_totals["total_tax_amount"] = (
+            invoice_totals["total_net_amount"]
+            * float(self.config["generator"]["sales"]["tax_rate"])
+        ).round(2)
+        sales_invoice_header.drop(
+            columns=["total_net_amount", "total_tax_amount"],
+            inplace=True,
+        )
+        recalibrated_headers = sales_invoice_header.merge(
+            invoice_totals[["sales_invoice_id", "total_net_amount", "total_tax_amount"]],
+            on="sales_invoice_id",
+            how="left",
+        )
+        for column in recalibrated_headers.columns:
+            sales_invoice_header[column] = recalibrated_headers[column]
+
+        if not sales_credit_memo_line.empty:
+            for column in ["unit_price", "discount_amount", "net_credit_amount"]:
+                sales_credit_memo_line[column] = (
+                    sales_credit_memo_line[column].astype(float) * factor
+                ).round(2)
+
+            credit_totals = (
+                sales_credit_memo_line.groupby("sales_credit_memo_id", as_index=False)[
+                    "net_credit_amount"
+                ].sum()
+            )
+            credit_totals["total_net_amount"] = credit_totals["net_credit_amount"].round(2)
+            sales_credit_memo_header.drop(columns=["total_net_amount"], inplace=True)
+            recalibrated_credits = sales_credit_memo_header.merge(
+                credit_totals[["sales_credit_memo_id", "total_net_amount"]],
+                on="sales_credit_memo_id",
+                how="left",
+            )
+            for column in recalibrated_credits.columns:
+                sales_credit_memo_header[column] = recalibrated_credits[column]
 
     def _generate_inventory_and_cost(
         self,
