@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -59,7 +60,7 @@ class ERPGenerator:
 
         self.end_date = pd.Timestamp(gen["end_date"]).normalize()
         self.history_months = int(gen["history_months"])
-        self.start_date = (self.end_date - pd.DateOffset(months=self.history_months)) + pd.Timedelta(days=1)
+        self.start_date = (self.end_date - pd.DateOffset(months=self.history_months)) + timedelta(days=1)
         self.date_pool = pd.date_range(self.start_date, self.end_date, freq="D")
         self.date_probabilities = self._build_date_probabilities()
 
@@ -246,13 +247,13 @@ class ERPGenerator:
             customer_id = customers.iloc[int(customer_idx[i])]["customer_id"]
             order_date = pd.Timestamp(order_dates[i])
             requested_delivery = min(
-                order_date + pd.Timedelta(days=int(self.rng.integers(2, 15))),
-                self.end_date + pd.Timedelta(days=30),
+                order_date + timedelta(days=int(self.rng.integers(2, 15))),
+                self.end_date + timedelta(days=30),
             )
             salesperson_id = customer_lookup.loc[customer_id, "salesperson_id"]
             invoiced = bool(
                 (i == 0 or self.rng.random() < invoice_rate)
-                and order_date <= self.end_date - pd.Timedelta(days=2)
+                and order_date <= self.end_date - timedelta(days=2)
             )
             line_count = max(1, int(self.rng.poisson(max(0.1, avg_lines - 1.0)) + 1))
             product_indices = self.rng.choice(len(products), size=line_count, p=product_weights)
@@ -305,7 +306,7 @@ class ERPGenerator:
                     "currency_code": "EUR",
                     "status": "invoiced" if invoiced else "open",
                     "document_discount_amount": 0.0,
-                    "created_at": (order_date + pd.Timedelta(hours=int(self.rng.integers(7, 18)))).isoformat(),
+                    "created_at": (order_date + timedelta(hours=int(self.rng.integers(7, 18)))).isoformat(),
                 }
             )
 
@@ -313,7 +314,7 @@ class ERPGenerator:
                 invoice_id = f"SI{invoice_seq:07d}"
                 invoice_no = f"INV-{invoice_seq:07d}"
                 posting_date = min(
-                    order_date + pd.Timedelta(days=int(self.rng.integers(1, 11))),
+                    order_date + timedelta(days=int(self.rng.integers(1, 11))),
                     self.end_date,
                 )
                 invoice_net = 0.0
@@ -391,7 +392,7 @@ class ERPGenerator:
                 invoice_header_lookup.loc[invoice_line["sales_invoice_id"], "posting_date"]
             )
             posting_date = min(
-                invoice_date + pd.Timedelta(days=int(self.rng.integers(2, 45))),
+                invoice_date + timedelta(days=int(self.rng.integers(2, 45))),
                 self.end_date,
             )
             credit_id = f"SCM{credit_seq:07d}"
