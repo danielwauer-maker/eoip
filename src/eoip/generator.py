@@ -250,7 +250,10 @@ class ERPGenerator:
                 self.end_date + pd.Timedelta(days=30),
             )
             salesperson_id = customer_lookup.loc[customer_id, "salesperson_id"]
-            invoiced = bool(self.rng.random() < invoice_rate and order_date <= self.end_date - pd.Timedelta(days=2))
+            invoiced = bool(
+                (i == 0 or self.rng.random() < invoice_rate)
+                and order_date <= self.end_date - pd.Timedelta(days=2)
+            )
             line_count = max(1, int(self.rng.poisson(max(0.1, avg_lines - 1.0)) + 1))
             product_indices = self.rng.choice(len(products), size=line_count, p=product_weights)
             warehouse_indices = self.rng.integers(0, len(warehouses), size=line_count)
@@ -918,11 +921,19 @@ class ERPGenerator:
             .sum()
             .rename(columns={"outstanding_quantity": "reserved_quantity"})
         )
-        inventory_balance = on_hand.merge(
-            reserved,
-            on=["product_id", "warehouse_id"],
-            how="outer",
-        ).fillna(0.0)
+        product_warehouse_grid = pd.MultiIndex.from_product(
+            [
+                products["product_id"].to_list(),
+                warehouses["warehouse_id"].to_list(),
+            ],
+            names=["product_id", "warehouse_id"],
+        ).to_frame(index=False)
+        inventory_balance = (
+            product_warehouse_grid
+            .merge(on_hand, on=["product_id", "warehouse_id"], how="left")
+            .merge(reserved, on=["product_id", "warehouse_id"], how="left")
+            .fillna(0.0)
+        )
         inventory_balance["on_hand_quantity"] = inventory_balance["on_hand_quantity"].round(4)
         inventory_balance["reserved_quantity"] = inventory_balance["reserved_quantity"].round(4)
         inventory_balance["available_quantity"] = (
