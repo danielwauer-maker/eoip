@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: eoip
+      POSTGRES_USER: eoip
+      POSTGRES_PASSWORD: eoip_local
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eoip -d eoip"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - eoip_postgres:/var/lib/postgresql/data
+
+volumes:
+  eoip_postgres:
