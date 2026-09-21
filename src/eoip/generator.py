@@ -854,6 +854,56 @@ class ERPGenerator:
                 cost_amount_actual=qty * unit_cost,
             )
 
+        provisional_ledger = pd.DataFrame(ledger_rows)
+        provisional_on_hand = (
+            provisional_ledger.groupby(["product_id", "warehouse_id"], as_index=False)["quantity"]
+            .sum()
+            .rename(columns={"quantity": "on_hand_quantity"})
+        )
+        provisional_reserved = (
+            sales["sales_order_line"]
+            .groupby(["product_id", "warehouse_id"], as_index=False)["outstanding_quantity"]
+            .sum()
+            .rename(columns={"outstanding_quantity": "reserved_quantity"})
+        )
+        risk_view = provisional_on_hand.merge(
+            provisional_reserved,
+            on=["product_id", "warehouse_id"],
+            how="outer",
+        ).fillna(0.0)
+        risk_view["available_quantity"] = (
+            risk_view["on_hand_quantity"] - risk_view["reserved_quantity"]
+        )
+
+        if not bool((risk_view["available_quantity"] <= 0).any()):
+            candidates = risk_view[risk_view["reserved_quantity"] > 0].copy()
+            if not candidates.empty:
+                candidate = candidates.sort_values(
+                    ["reserved_quantity", "on_hand_quantity"],
+                    ascending=[False, True],
+                ).iloc[0]
+                adjustment_qty = -(
+                    float(candidate["on_hand_quantity"])
+                    - float(candidate["reserved_quantity"])
+                    + 1.0
+                )
+                if adjustment_qty < 0:
+                    product_id = str(candidate["product_id"])
+                    unit_cost = float(product_lookup.loc[product_id, "standard_unit_cost"])
+                    add_ledger(
+                        product_id=product_id,
+                        warehouse_id=str(candidate["warehouse_id"]),
+                        posting_date=self.end_date,
+                        entry_type="negative_adjustment",
+                        quantity=adjustment_qty,
+                        document_type="inventory_adjustment",
+                        document_no="STOCKOUT-SCENARIO",
+                        document_line_no=0,
+                        source_entity_type="synthetic_scenario",
+                        source_entity_id="stockout-risk-calibration",
+                        cost_amount_actual=adjustment_qty * unit_cost,
+                    )
+
         inventory_ledger_entry = pd.DataFrame(ledger_rows)
         value_entry = pd.DataFrame(value_rows)
 
