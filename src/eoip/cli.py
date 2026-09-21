@@ -2,9 +2,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 from .config import load_company_profile, load_generator_config
+from .database import (
+    apply_migrations,
+    connect_database,
+    load_csv_directory,
+    load_dataset,
+    validate_database,
+    write_database_validation,
+)
 from .generator import ERPGenerator, dataset_fingerprint, export_dataset
 from .validate import validate_dataset
 
@@ -22,6 +31,26 @@ def build_parser() -> argparse.ArgumentParser:
         "--allow-validation-failures",
         action="store_true",
         help="Export even when validation checks fail.",
+    )
+
+    load_db = sub.add_parser(
+        "load-db",
+        help="Apply SQL migrations and load a generated dataset into PostgreSQL.",
+    )
+    load_db.add_argument(
+        "--database-url",
+        default=os.environ.get("DATABASE_URL"),
+        help="PostgreSQL connection URL. Defaults to DATABASE_URL.",
+    )
+    load_db.add_argument(
+        "--input",
+        default="data/generated",
+        help="Directory containing generated CSV source entities.",
+    )
+    load_db.add_argument(
+        "--validation-output",
+        default=None,
+        help="Optional path for database validation JSON. Defaults inside input directory.",
     )
 
     return parser
@@ -57,12 +86,51 @@ def run_generate(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_load_db(args: argparse.Namespace) -> int:
+    if not args.database_url:
+        raise SystemExit("A PostgreSQL URL is required via --database-url or DATABASE_URL.")
+
+    dataset = load_csv_directory(args.input)
+    expected_counts = {name: int(len(frame)) for name, frame in dataset.items()}
+
+    with connect_database(args.database_url) as connection:
+        migrations = apply_migrations(connection)
+        loaded_counts = load_dataset(connection, dataset, truncate=True)
+        validation = validate_database(
+            connection,
+            expected_row_counts=expected_counts,
+        )
+
+    output_path = (
+        Path(args.validation_output)
+        if args.validation_output
+        else Path(args.input) / "database-validation.json"
+    )
+    write_database_validation(validation, output_path)
+
+    print(
+        json.dumps(
+            {
+                "migrations": migrations,
+                "loaded_rows": loaded_counts,
+                "validation_passed": validation["passed"],
+                "validation_output": str(output_path),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
+    return 0 if validation["passed"] else 2
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
     if args.command == "generate":
         raise SystemExit(run_generate(args))
+    if args.command == "load-db":
+        raise SystemExit(run_load_db(args))
 
     raise SystemExit(1)
 
