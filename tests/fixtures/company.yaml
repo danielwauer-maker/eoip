@@ -1,0 +1,15 @@
+schema_version: 1
+company:
+  id: test-distribution
+  name: Test Distribution GmbH
+  type: fictional_test_fixture
+  profile:
+    industry: Wholesale distribution
+    employees: 20
+    annual_revenue_eur: 5000000
+    products: 500
+    customers: 180
+    suppliers: 35
+    warehouse_locations: 3
+    inventory_value_eur: 700000
+    annual_procurement_volume_eur: 2500000
