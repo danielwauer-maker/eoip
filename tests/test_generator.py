@@ -85,3 +85,21 @@ def test_business_patterns_exist():
     value_entries = dataset["value_entry"]
     assert (value_entries["entry_type"] == "sale").any()
     assert (value_entries["sales_amount_actual"] > 0).any()
+
+
+def test_net_sales_calibrates_to_company_profile_scale():
+    company = load_company_profile(COMPANY)
+    config = load_generator_config(CONFIG)
+    scale_factor = 0.002
+    generator = ERPGenerator(company, config, scale_factor=scale_factor)
+    dataset = generator.generate()
+
+    invoice_sales = float(dataset["sales_invoice_line"]["net_line_amount"].sum())
+    return_value = float(dataset["sales_credit_memo_line"]["net_credit_amount"].sum())
+    generated_net_sales = invoice_sales - return_value
+
+    history_years = (generator.end_date - generator.start_date).days / 365.25
+    expected_net_sales = company.annual_revenue_eur * history_years * scale_factor
+
+    assert generated_net_sales > 0
+    assert abs(generated_net_sales - expected_net_sales) / expected_net_sales < 0.01
