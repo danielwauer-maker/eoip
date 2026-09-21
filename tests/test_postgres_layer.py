@@ -11,7 +11,9 @@ from eoip.database import (
     connect_database,
     load_dataset,
     raw_row_counts,
+    refresh_dimensional_model,
     validate_database,
+    validate_dimensional_model,
 )
 from eoip.generator import ERPGenerator
 
@@ -33,6 +35,7 @@ def test_postgres_raw_and_staging_pipeline():
             "001_create_schemas.sql",
             "010_raw_tables.sql",
             "020_staging_views.sql",
+            "030_dw_tables.sql",
         ]
 
         loaded = load_dataset(connection, dataset, truncate=True)
@@ -43,6 +46,10 @@ def test_postgres_raw_and_staging_pipeline():
             expected_row_counts=expected_counts,
         )
         assert report["passed"], report
+
+        refresh_dimensional_model(connection)
+        dw_report = validate_dimensional_model(connection)
+        assert dw_report["passed"], dw_report
 
         with connection.cursor() as cursor:
             cursor.execute("SELECT COUNT(*) FROM stg.sales_document_line")
@@ -71,6 +78,43 @@ def test_postgres_raw_and_staging_pipeline():
             )
             assert int(cursor.fetchone()[0]) > 0
 
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    (SELECT COUNT(*) FROM dw.fact_sales),
+                    (SELECT COUNT(*) FROM dw.fact_sales_order),
+                    (SELECT COUNT(*) FROM dw.fact_inventory_movement),
+                    (SELECT COUNT(*) FROM dw.fact_inventory_snapshot),
+                    (SELECT COALESCE(SUM(net_sales_signed), 0) FROM dw.fact_sales),
+                    (SELECT COALESCE(SUM(cogs_signed), 0) FROM dw.fact_sales)
+                """
+            )
+            first_dw_snapshot = cursor.fetchone()
+
+        refresh_dimensional_model(connection)
+        second_dw_report = validate_dimensional_model(connection)
+        assert second_dw_report["passed"], second_dw_report
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    (SELECT COUNT(*) FROM dw.fact_sales),
+                    (SELECT COUNT(*) FROM dw.fact_sales_order),
+                    (SELECT COUNT(*) FROM dw.fact_inventory_movement),
+                    (SELECT COUNT(*) FROM dw.fact_inventory_snapshot),
+                    (SELECT COALESCE(SUM(net_sales_signed), 0) FROM dw.fact_sales),
+                    (SELECT COALESCE(SUM(cogs_signed), 0) FROM dw.fact_sales)
+                """
+            )
+            second_dw_snapshot = cursor.fetchone()
+
+        assert first_dw_snapshot == second_dw_snapshot
+
         reloaded = load_dataset(connection, dataset, truncate=True)
         assert reloaded == expected_counts
         assert raw_row_counts(connection) == expected_counts
+
+        refresh_dimensional_model(connection)
+        assert validate_dimensional_model(connection)["passed"]

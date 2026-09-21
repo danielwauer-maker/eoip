@@ -11,7 +11,9 @@ from .database import (
     connect_database,
     load_csv_directory,
     load_dataset,
+    refresh_dimensional_model,
     validate_database,
+    validate_dimensional_model,
     write_database_validation,
 )
 from .generator import ERPGenerator, dataset_fingerprint, export_dataset
@@ -51,6 +53,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--validation-output",
         default=None,
         help="Optional path for database validation JSON. Defaults inside input directory.",
+    )
+
+    build_dw = sub.add_parser(
+        "build-dw",
+        help="Refresh and validate the EOIP dimensional warehouse from staging.",
+    )
+    build_dw.add_argument(
+        "--database-url",
+        default=os.environ.get("DATABASE_URL"),
+        help="PostgreSQL connection URL. Defaults to DATABASE_URL.",
+    )
+    build_dw.add_argument(
+        "--validation-output",
+        default="data/dw-validation.json",
+        help="Path for dimensional-model validation JSON.",
     )
 
     return parser
@@ -123,6 +140,32 @@ def run_load_db(args: argparse.Namespace) -> int:
     return 0 if validation["passed"] else 2
 
 
+def run_build_dw(args: argparse.Namespace) -> int:
+    if not args.database_url:
+        raise SystemExit("A PostgreSQL URL is required via --database-url or DATABASE_URL.")
+
+    with connect_database(args.database_url) as connection:
+        apply_migrations(connection)
+        refresh_dimensional_model(connection)
+        validation = validate_dimensional_model(connection)
+
+    output_path = Path(args.validation_output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    write_database_validation(validation, output_path)
+
+    print(
+        json.dumps(
+            {
+                "validation_passed": validation["passed"],
+                "validation_output": str(output_path),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
+    return 0 if validation["passed"] else 2
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -131,6 +174,8 @@ def main() -> None:
         raise SystemExit(run_generate(args))
     if args.command == "load-db":
         raise SystemExit(run_load_db(args))
+    if args.command == "build-dw":
+        raise SystemExit(run_build_dw(args))
 
     raise SystemExit(1)
 
