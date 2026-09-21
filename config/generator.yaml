@@ -2,6 +2,7 @@ schema_version: 1
 generator:
   seed: 20260922
   history_months: 36
+  end_date: 2026-08-31
   scale_factor: 0.01
   locale: en_US
 
