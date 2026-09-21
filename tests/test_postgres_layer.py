@@ -78,18 +78,19 @@ def test_postgres_raw_and_staging_pipeline():
             )
             assert int(cursor.fetchone()[0]) > 0
 
-        cursor.execute(
-            """
-            SELECT
-                (SELECT COUNT(*) FROM dw.fact_sales),
-                (SELECT COUNT(*) FROM dw.fact_sales_order),
-                (SELECT COUNT(*) FROM dw.fact_inventory_movement),
-                (SELECT COUNT(*) FROM dw.fact_inventory_snapshot),
-                (SELECT COALESCE(SUM(net_sales_signed), 0) FROM dw.fact_sales),
-                (SELECT COALESCE(SUM(cogs_signed), 0) FROM dw.fact_sales)
-            """
-        )
-        first_dw_snapshot = cursor.fetchone()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    (SELECT COUNT(*) FROM dw.fact_sales),
+                    (SELECT COUNT(*) FROM dw.fact_sales_order),
+                    (SELECT COUNT(*) FROM dw.fact_inventory_movement),
+                    (SELECT COUNT(*) FROM dw.fact_inventory_snapshot),
+                    (SELECT COALESCE(SUM(net_sales_signed), 0) FROM dw.fact_sales),
+                    (SELECT COALESCE(SUM(cogs_signed), 0) FROM dw.fact_sales)
+                """
+            )
+            first_dw_snapshot = cursor.fetchone()
 
         refresh_dimensional_model(connection)
         second_dw_report = validate_dimensional_model(connection)
