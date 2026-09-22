@@ -17,7 +17,7 @@ kpi_catalog:
       presentation_policy: Return Value and Return Rate present return magnitude as positive values.
     divide_by_zero: Return BLANK in DAX and NULL in SQL reference calculations when a denominator is zero.
     inventory_snapshot:
-      rule: Use the latest available inventory snapshot in the active model context.
+      rule: Use the latest available inventory snapshot and ignore commercial date-range filters for point-in-time inventory measures.
       negative_stock_asset_policy: Negative on-hand is excluded from inventory asset value but remains visible through availability-risk logic.
     inventory_demand:
       demand_window_days: 90
@@ -346,12 +346,12 @@ kpi_catalog:
         tables: [semantic.v_inventory_position, dw.fact_inventory_snapshot]
         fields: [positive_inventory_value, on_hand_quantity, unit_cost_at_snapshot]
       dimensions: [product, warehouse]
-      time_behavior: Point-in-time; latest available snapshot.
+      time_behavior: Point-in-time; latest available snapshot. Commercial date-range filters are ignored by the DAX measure.
       sign_policy: Negative on-hand is excluded from asset value and handled through availability-risk logic.
       zero_behavior: Returns 0 when positive inventory is absent.
       dax:
         measure_name: Inventory Value
-        expression: "SUM('inventory_position'[positive_inventory_value])"
+        expression: "CALCULATE(SUM('inventory_position'[positive_inventory_value]), REMOVEFILTERS('dim_date'))"
       sql_reference:
         view: semantic.v_kpi_reference
         scope: latest_inventory_snapshot
@@ -369,7 +369,7 @@ kpi_catalog:
         tables: [dw.fact_sales, dw.dim_date, semantic.v_inventory_position]
         fields: [cogs_signed, full_date, positive_inventory_value]
       dimensions: [product, warehouse]
-      time_behavior: Numerator uses trailing 365 days ending at latest snapshot date; denominator is current snapshot.
+      time_behavior: Numerator uses trailing 365 days ending at latest snapshot date; denominator is current snapshot. Commercial date-range filters do not change the snapshot anchor.
       sign_policy: Return COGS reversals reduce trailing COGS.
       zero_behavior: BLANK when Inventory Value is zero.
       assumptions:
@@ -395,12 +395,12 @@ kpi_catalog:
         tables: [semantic.v_inventory_position]
         fields: [on_hand_quantity, average_daily_units_90d]
       dimensions: [product, warehouse]
-      time_behavior: Point-in-time snapshot with trailing 90-day demand window.
+      time_behavior: Point-in-time snapshot with trailing 90-day demand window. Commercial date-range filters are ignored by the DAX measure.
       sign_policy: Demand uses positive invoice quantity only; returns do not reduce demand baseline.
       zero_behavior: BLANK in DAX when trailing average daily demand is zero.
       dax:
         measure_name: Stock Coverage Days
-        expression: "DIVIDE(SUM('inventory_position'[on_hand_quantity]), SUM('inventory_position'[average_daily_units_90d]))"
+        expression: "CALCULATE(DIVIDE(SUM('inventory_position'[on_hand_quantity]), SUM('inventory_position'[average_daily_units_90d])), REMOVEFILTERS('dim_date'))"
       sql_reference:
         view: semantic.v_kpi_reference
         scope: current_on_hand_over_trailing_90d_average_daily_invoice_units
@@ -418,12 +418,12 @@ kpi_catalog:
         tables: [semantic.v_inventory_position]
         fields: [positive_inventory_value, slow_moving_flag, last_positive_sale_date]
       dimensions: [product, warehouse]
-      time_behavior: Evaluated against latest snapshot date and trailing 90-day activity.
+      time_behavior: Evaluated against latest snapshot date and trailing 90-day activity. Commercial date-range filters are ignored by the DAX measure.
       sign_policy: Only positive inventory asset value contributes.
       zero_behavior: Returns 0 when no positions are slow-moving.
       dax:
         measure_name: Slow-Moving Inventory Value
-        expression: "CALCULATE([Inventory Value], 'inventory_position'[slow_moving_flag] = TRUE())"
+        expression: "CALCULATE([Inventory Value], REMOVEFILTERS('dim_date'), 'inventory_position'[slow_moving_flag] = TRUE())"
       sql_reference:
         view: semantic.v_kpi_reference
         scope: no_positive_invoice_units_in_trailing_90_days
@@ -449,7 +449,7 @@ kpi_catalog:
         - This is not a safety-stock or reorder recommendation.
       dax:
         measure_name: Excess Inventory Value
-        expression: "SUM('inventory_position'[excess_inventory_value_60d])"
+        expression: "CALCULATE(SUM('inventory_position'[excess_inventory_value_60d]), REMOVEFILTERS('dim_date'))"
       sql_reference:
         view: semantic.v_kpi_reference
         scope: inventory_above_60_days_of_trailing_90d_average_demand
@@ -472,7 +472,7 @@ kpi_catalog:
       zero_behavior: Returns 0 when no products are at risk.
       dax:
         measure_name: Stockout-Risk SKU Count
-        expression: "CALCULATE(DISTINCTCOUNT('inventory_position'[product_key]), 'inventory_position'[stockout_risk_flag] = TRUE())"
+        expression: "CALCULATE(DISTINCTCOUNT('inventory_position'[product_key]), REMOVEFILTERS('dim_date'), 'inventory_position'[stockout_risk_flag] = TRUE())"
       sql_reference:
         view: semantic.v_kpi_reference
         scope: distinct_products_with_open_demand_above_available_quantity
