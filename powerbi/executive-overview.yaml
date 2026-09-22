@@ -1,0 +1,152 @@
+schema_version: 1
+page:
+  id: executive_overview
+  name: Executive Overview
+  work_package: EOIP-07
+  status: power_bi_ready
+  purpose: Give executive management one cross-domain view of sales, gross-margin quality and inventory exposure, then direct attention to the relevant detailed page.
+
+  business_questions:
+    - Are Net Sales and Gross Profit improving or deteriorating?
+    - Is Gross Margin % healthy in the active context?
+    - How much working capital is currently tied up in inventory?
+    - Which categories combine commercial importance with margin or inventory attention signals?
+    - Should management drill next into Sales & Margin or Inventory Intelligence?
+
+  page_canvas:
+    aspect_ratio: "16:9"
+    width: 1440
+    height: 810
+    grid_columns: 12
+    outer_margin: 24
+    gap: 16
+
+  global_filters:
+    - {id: date_range, field: dim_date.full_date, type: between, default: latest_12_complete_months}
+    - {id: customer_group, field: dim_customer.customer_group, type: dropdown, default: all}
+    - {id: product_category, field: dim_product.category_name, type: dropdown, default: all}
+    - {id: warehouse, field: dim_warehouse.warehouse_name, type: dropdown, default: all}
+    - {id: salesperson, field: dim_salesperson.display_name, type: dropdown, default: all}
+
+  visual_count: 9
+  visuals:
+    - id: exec_net_sales
+      type: kpi_card
+      title: Net Sales
+      position: {x: 0, y: 0, w: 2, h: 1}
+      kpis: [net_sales]
+      decision_use: Establish realized sales scale.
+
+    - id: exec_sales_growth
+      type: kpi_card
+      title: Sales Growth %
+      position: {x: 2, y: 0, w: 2, h: 1}
+      kpis: [sales_growth_pct]
+      decision_use: Show directional sales momentum versus prior year.
+
+    - id: exec_gross_profit
+      type: kpi_card
+      title: Gross Profit
+      position: {x: 4, y: 0, w: 2, h: 1}
+      kpis: [gross_profit]
+      decision_use: Show absolute gross-profit contribution.
+
+    - id: exec_gross_margin
+      type: kpi_card
+      title: Gross Margin %
+      position: {x: 6, y: 0, w: 2, h: 1}
+      kpis: [gross_margin_pct]
+      decision_use: Show commercial margin quality independent of sales scale.
+
+    - id: exec_inventory_value
+      type: kpi_card
+      title: Inventory Value
+      position: {x: 8, y: 0, w: 2, h: 1}
+      kpis: [inventory_value]
+      decision_use: Show current working capital tied up in positive inventory.
+
+    - id: exec_stockout_risk
+      type: kpi_card
+      title: Stockout-Risk SKUs
+      position: {x: 10, y: 0, w: 2, h: 1}
+      kpis: [stockout_risk_sku_count]
+      decision_use: Show the breadth of immediate known-demand availability exposure.
+
+    - id: exec_trend
+      type: line_and_clustered_column
+      title: Sales, Gross Profit & Growth Trend
+      position: {x: 0, y: 1, w: 7, h: 3}
+      axis:
+        category: dim_date.year_month
+        sort: ascending
+      kpis: [net_sales, gross_profit, sales_growth_pct]
+      encoding:
+        columns: [net_sales, gross_profit]
+        line: [sales_growth_pct]
+      sql_validation_reference: semantic.v_sales_margin_monthly_reference
+      decision_use: Show whether commercial momentum and gross-profit delivery move together over time.
+
+    - id: exec_category_portfolio
+      type: scatter
+      title: Category Sales vs Gross Margin
+      position: {x: 7, y: 1, w: 5, h: 3}
+      detail: dim_product.category_name
+      x: net_sales
+      y: gross_margin_pct
+      size: inventory_value
+      kpis: [net_sales, gross_margin_pct, inventory_value]
+      sql_validation_reference: semantic.v_executive_category_reference
+      decision_use: Identify commercially material categories that combine weak margin or high inventory exposure.
+
+    - id: exec_attention
+      type: table
+      title: Management Attention
+      position: {x: 0, y: 4, w: 12, h: 3}
+      rows:
+        - dim_product.category_name
+      kpis:
+        - net_sales
+        - gross_margin_pct
+        - inventory_value
+        - excess_inventory_value
+        - stockout_risk_sku_count
+      conditional_formatting:
+        - {kpi: gross_margin_pct, rule: low_is_attention}
+        - {kpi: excess_inventory_value, rule: high_is_attention}
+        - {kpi: stockout_risk_sku_count, rule: nonzero_is_attention}
+      sql_validation_reference: semantic.v_executive_attention_reference
+      decision_use: Prioritize material categories with margin, excess-stock or availability signals.
+
+  navigation:
+    targets:
+      - {page_id: sales_performance, label: Open Sales Performance}
+      - {page_id: margin_discount, label: Open Margin & Discount}
+      - {page_id: customer_product, label: Open Customer & Product}
+      - {page_id: inventory_overview, label: Open Inventory Intelligence}
+      - {page_id: inventory_risk, label: Open Inventory Risk & Working Capital}
+    preserve_filter_context: true
+
+  interaction_rules:
+    - Category selection cross-filters compatible Executive visuals.
+    - KPI cards always reflect the complete active filter context.
+    - Selecting a category in Management Attention should preserve category context when navigating to detail pages.
+    - No visual contains a hidden replacement KPI formula.
+    - Attention flags are screening rules only and are never shown as business-impact claims.
+
+  validation:
+    sql_views:
+      - semantic.v_executive_kpi_reference
+      - semantic.v_executive_category_reference
+      - semantic.v_executive_attention_reference
+    required_kpis:
+      - net_sales
+      - sales_growth_pct
+      - gross_profit
+      - gross_margin_pct
+      - inventory_value
+      - stockout_risk_sku_count
+    forbidden_business_concepts:
+      - contribution_margin
+      - cost_to_serve
+      - safety_stock_recommendation
+      - reorder_point_recommendation
