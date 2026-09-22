@@ -1,0 +1,153 @@
+table fact_sales
+	lineageTag: 553e4f05-f376-4ade-9da7-bc0513b961aa
+
+	column sales_fact_key
+		dataType: int64
+		formatString: 0
+		lineageTag: a70bdc33-1030-4ac4-9464-9c82b9ed0435
+		summarizeBy: sum
+		sourceColumn: sales_fact_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 7374fef1-a23e-4322-9d5e-58daf0674e5e
+		summarizeBy: none
+		sourceColumn: date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_key
+		dataType: int64
+		formatString: 0
+		lineageTag: e1373fe2-46f2-4e5d-93b8-99ac1961d572
+		summarizeBy: none
+		sourceColumn: customer_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_key
+		dataType: int64
+		formatString: 0
+		lineageTag: d7f2b98e-ece8-4b48-86ad-fff2e539f507
+		summarizeBy: none
+		sourceColumn: product_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column warehouse_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 6b871436-475e-4766-b122-355212c2962b
+		summarizeBy: none
+		sourceColumn: warehouse_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column salesperson_key
+		dataType: int64
+		formatString: 0
+		lineageTag: e5347d96-2a03-42f8-bbe4-c9a2286061ab
+		summarizeBy: none
+		sourceColumn: salesperson_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_document_type
+		dataType: string
+		lineageTag: e2502646-ba8d-48d0-aab6-d506794e4a2e
+		summarizeBy: none
+		sourceColumn: source_document_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_document_id
+		dataType: string
+		lineageTag: 42292b5b-ac74-408c-b895-547ff095a21d
+		summarizeBy: none
+		sourceColumn: source_document_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_document_no
+		dataType: string
+		lineageTag: d8b6b2ae-ae33-4aaa-b742-d57edce0309a
+		summarizeBy: none
+		sourceColumn: source_document_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column source_line_no
+		dataType: int64
+		formatString: 0
+		lineageTag: 513dda06-d266-4ad0-a5e4-b4124ad1d8b7
+		summarizeBy: sum
+		sourceColumn: source_line_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column quantity_signed
+		dataType: double
+		lineageTag: 338e2833-aa36-495d-a920-03c2723b9aab
+		summarizeBy: sum
+		sourceColumn: quantity_signed
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column gross_sales_signed
+		dataType: double
+		lineageTag: 921960e2-4021-45cf-b769-44a682de1c1f
+		summarizeBy: sum
+		sourceColumn: gross_sales_signed
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column discount_signed
+		dataType: double
+		lineageTag: c3146f4f-6e37-45ab-9a12-6efef2b47c95
+		summarizeBy: sum
+		sourceColumn: discount_signed
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column net_sales_signed
+		dataType: double
+		lineageTag: d250e1be-0ccf-45c4-8d0a-d35ed26a2e14
+		summarizeBy: sum
+		sourceColumn: net_sales_signed
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column cogs_signed
+		dataType: double
+		lineageTag: be84c786-d8e4-4b7e-9d88-3edc2ac5835f
+		summarizeBy: sum
+		sourceColumn: cogs_signed
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fact_sales = m
+		mode: import
+		source =
+				let
+				    Quelle = PostgreSQL.Database("localhost:5433", "eoip"),
+				    dw_fact_sales = Quelle{[Schema="dw",Item="fact_sales"]}[Data]
+				in
+				    dw_fact_sales
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+

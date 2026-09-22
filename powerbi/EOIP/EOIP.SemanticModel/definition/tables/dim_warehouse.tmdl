@@ -1,0 +1,66 @@
+table dim_warehouse
+	lineageTag: d863e8ad-294a-4965-a1cc-b6f6568d9fe8
+
+	column warehouse_key
+		dataType: int64
+		formatString: 0
+		lineageTag: a6d59362-cca1-4a40-8381-fff297d4ab58
+		summarizeBy: none
+		sourceColumn: warehouse_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column warehouse_id
+		dataType: string
+		lineageTag: 4530f42b-dc76-462c-aa16-c821b08198a7
+		summarizeBy: none
+		sourceColumn: warehouse_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column warehouse_code
+		dataType: string
+		lineageTag: eb5d9a0d-89e5-43db-8418-68121d730a66
+		summarizeBy: none
+		sourceColumn: warehouse_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column warehouse_name
+		dataType: string
+		lineageTag: a24a1e4c-0f1e-4177-9248-d82a250be703
+		summarizeBy: none
+		sourceColumn: warehouse_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column region
+		dataType: string
+		lineageTag: af6e1219-0e34-4f40-a622-a85ca741c169
+		summarizeBy: none
+		sourceColumn: region
+
+		annotation SummarizationSetBy = Automatic
+
+	column active_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: dd1e7205-1bb5-4201-b361-0f43907788a4
+		summarizeBy: none
+		sourceColumn: active_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_warehouse = m
+		mode: import
+		source =
+				let
+				    Quelle = PostgreSQL.Database("localhost:5433", "eoip"),
+				    dw_dim_warehouse = Quelle{[Schema="dw",Item="dim_warehouse"]}[Data]
+				in
+				    dw_dim_warehouse
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+

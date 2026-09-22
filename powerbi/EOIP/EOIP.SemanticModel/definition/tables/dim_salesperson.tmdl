@@ -1,0 +1,66 @@
+table dim_salesperson
+	lineageTag: b09c5ba3-36a6-4882-83e7-a869121409fc
+
+	column salesperson_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 9c2477c8-4f54-4e16-a8f1-c2b78e14c340
+		summarizeBy: none
+		sourceColumn: salesperson_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column salesperson_id
+		dataType: string
+		lineageTag: 64bb7f9a-3cd8-4d0e-93cd-fac77fb86048
+		summarizeBy: none
+		sourceColumn: salesperson_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column salesperson_code
+		dataType: string
+		lineageTag: d7564767-bac3-4850-bc54-96dffcf11e55
+		summarizeBy: none
+		sourceColumn: salesperson_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column display_name
+		dataType: string
+		lineageTag: d04b1329-85f4-47ed-bfa0-bc61a0291923
+		summarizeBy: none
+		sourceColumn: display_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column sales_region
+		dataType: string
+		lineageTag: 1c783b05-0123-4cf7-9836-b974c3809ec3
+		summarizeBy: none
+		sourceColumn: sales_region
+
+		annotation SummarizationSetBy = Automatic
+
+	column active_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: c684206d-1714-4cd4-994d-bc3c1f4c9356
+		summarizeBy: none
+		sourceColumn: active_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_salesperson = m
+		mode: import
+		source =
+				let
+				    Quelle = PostgreSQL.Database("localhost:5433", "eoip"),
+				    dw_dim_salesperson = Quelle{[Schema="dw",Item="dim_salesperson"]}[Data]
+				in
+				    dw_dim_salesperson
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+
