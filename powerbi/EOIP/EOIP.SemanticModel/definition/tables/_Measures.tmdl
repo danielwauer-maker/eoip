@@ -1,0 +1,181 @@
+table _Measures
+
+	measure 'Gross Sales' = ```
+			SUM('fact_sales'[gross_sales_signed])
+			```
+
+	measure 'Net Sales Base' = ```
+			SUM('fact_sales'[net_sales_signed])
+			```
+
+	measure 'COGS' = ```
+			SUM('fact_sales'[cogs_signed])
+			```
+
+	measure 'Ordered Net Value' = ```
+			SUM('fact_sales_order'[net_order_amount])
+			```
+
+	measure 'Invoice Sales' = ```
+			CALCULATE(
+			    [Net Sales Base],
+			    'fact_sales'[source_document_type] = "invoice"
+			)
+			```
+
+	measure 'Credit Memo Sales' = ```
+			CALCULATE(
+			    [Net Sales Base],
+			    'fact_sales'[source_document_type] = "credit_memo"
+			)
+			```
+
+	measure 'Net Sales PY' = ```
+			CALCULATE(
+			    [Net Sales],
+			    DATEADD('dim_date'[full_date], -1, YEAR)
+			)
+			```
+
+	measure 'COGS TTM' = ```
+			VAR SnapshotDate =
+			    CALCULATE(
+			        MAX('inventory_position'[snapshot_date]),
+			        REMOVEFILTERS('dim_date')
+			    )
+			RETURN
+			    CALCULATE(
+			        [COGS],
+			        REMOVEFILTERS('dim_date'),
+			        DATESINPERIOD(
+			            'dim_date'[full_date],
+			            SnapshotDate,
+			            -365,
+			            DAY
+			        )
+			    )
+			```
+
+	measure 'Net Sales' = ```
+			[Net Sales Base]
+			```
+
+	measure 'Sales Growth %' = ```
+			DIVIDE(
+			    [Net Sales] - [Net Sales PY],
+			    ABS([Net Sales PY])
+			)
+			```
+
+	measure 'Gross Profit' = ```
+			[Net Sales] - [COGS]
+			```
+
+	measure 'Gross Margin %' = ```
+			DIVIDE(
+			    [Gross Profit],
+			    [Net Sales]
+			)
+			```
+
+	measure 'Order Count' = ```
+			DISTINCTCOUNT('fact_sales_order'[sales_order_id])
+			```
+
+	measure 'Average Order Value' = ```
+			DIVIDE(
+			    [Ordered Net Value],
+			    [Order Count]
+			)
+			```
+
+	measure 'Active Customers' = ```
+			CALCULATE(
+			    DISTINCTCOUNT('fact_sales'[customer_key]),
+			    'fact_sales'[net_sales_signed] <> 0
+			)
+			```
+
+	measure 'Units Sold' = ```
+			SUM('fact_sales'[quantity_signed])
+			```
+
+	measure 'Discount Value' = ```
+			SUM('fact_sales'[discount_signed])
+			```
+
+	measure 'Discount Rate %' = ```
+			DIVIDE(
+			    [Discount Value],
+			    [Gross Sales]
+			)
+			```
+
+	measure 'Return Value' = ```
+			-[Credit Memo Sales]
+			```
+
+	measure 'Return Rate %' = ```
+			DIVIDE(
+			    [Return Value],
+			    [Invoice Sales]
+			)
+			```
+
+	measure 'Inventory Value' = ```
+			CALCULATE(
+			    SUM('inventory_position'[positive_inventory_value]),
+			    REMOVEFILTERS('dim_date')
+			)
+			```
+
+	measure 'Inventory Turnover' = ```
+			DIVIDE(
+			    [COGS TTM],
+			    [Inventory Value]
+			)
+			```
+
+	measure 'Stock Coverage Days' = ```
+			CALCULATE(
+			    DIVIDE(
+			        SUM('inventory_position'[on_hand_quantity]),
+			        SUM('inventory_position'[average_daily_units_90d])
+			    ),
+			    REMOVEFILTERS('dim_date')
+			)
+			```
+
+	measure 'Slow-Moving Inventory Value' = ```
+			CALCULATE(
+			    [Inventory Value],
+			    REMOVEFILTERS('dim_date'),
+			    'inventory_position'[slow_moving_flag] = TRUE()
+			)
+			```
+
+	measure 'Excess Inventory Value' = ```
+			CALCULATE(
+			    SUM('inventory_position'[excess_inventory_value_60d]),
+			    REMOVEFILTERS('dim_date')
+			)
+			```
+
+	measure 'Stockout-Risk SKU Count' = ```
+			CALCULATE(
+			    DISTINCTCOUNT('inventory_position'[product_key]),
+			    REMOVEFILTERS('dim_date'),
+			    'inventory_position'[stockout_risk_flag] = TRUE()
+			)
+			```
+
+	column Value
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: sum
+		sourceColumn: [Value]
+
+	partition _Measures = calculated
+		mode: import
+		source = {1}

@@ -21,6 +21,7 @@ ref table dim_salesperson
 ref table fact_sales_order
 ref table fact_sales
 ref table inventory_position
+ref table _Measures
 
 ref cultureInfo de-DE
 
