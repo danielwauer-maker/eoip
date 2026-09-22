@@ -1,0 +1,140 @@
+-- EOIP V1 DAX Foundation
+-- Target: Power BI semantic model
+-- Recommended: create a dedicated Measures table and place these measures there.
+-- The semantic.inventory_position PostgreSQL view should be imported as table inventory_position.
+
+-- ============================================================
+-- BASE MEASURES
+-- ============================================================
+
+Gross Sales :=
+SUM('fact_sales'[gross_sales_signed])
+
+Net Sales Base :=
+SUM('fact_sales'[net_sales_signed])
+
+COGS :=
+SUM('fact_sales'[cogs_signed])
+
+Ordered Net Value :=
+SUM('fact_sales_order'[net_order_amount])
+
+Invoice Sales :=
+CALCULATE(
+    [Net Sales Base],
+    'fact_sales'[source_document_type] = "invoice"
+)
+
+Credit Memo Sales :=
+CALCULATE(
+    [Net Sales Base],
+    'fact_sales'[source_document_type] = "credit_memo"
+)
+
+Net Sales PY :=
+CALCULATE(
+    [Net Sales],
+    DATEADD('dim_date'[full_date], -1, YEAR)
+)
+
+COGS TTM :=
+VAR SnapshotDate =
+    MAX('inventory_position'[snapshot_date])
+RETURN
+    CALCULATE(
+        [COGS],
+        DATESINPERIOD(
+            'dim_date'[full_date],
+            SnapshotDate,
+            -365,
+            DAY
+        )
+    )
+
+-- ============================================================
+-- GOVERNED KPI MEASURES — EXACTLY 18 EOIP V1 IDENTITIES
+-- ============================================================
+
+Net Sales :=
+[Net Sales Base]
+
+Sales Growth % :=
+DIVIDE(
+    [Net Sales] - [Net Sales PY],
+    ABS([Net Sales PY])
+)
+
+Gross Profit :=
+[Net Sales] - [COGS]
+
+Gross Margin % :=
+DIVIDE(
+    [Gross Profit],
+    [Net Sales]
+)
+
+Order Count :=
+DISTINCTCOUNT('fact_sales_order'[sales_order_id])
+
+Average Order Value :=
+DIVIDE(
+    [Ordered Net Value],
+    [Order Count]
+)
+
+Active Customers :=
+CALCULATE(
+    DISTINCTCOUNT('fact_sales'[customer_key]),
+    'fact_sales'[net_sales_signed] <> 0
+)
+
+Units Sold :=
+SUM('fact_sales'[quantity_signed])
+
+Discount Value :=
+SUM('fact_sales'[discount_signed])
+
+Discount Rate % :=
+DIVIDE(
+    [Discount Value],
+    [Gross Sales]
+)
+
+Return Value :=
+-[Credit Memo Sales]
+
+Return Rate % :=
+DIVIDE(
+    [Return Value],
+    [Invoice Sales]
+)
+
+Inventory Value :=
+SUM('inventory_position'[positive_inventory_value])
+
+Inventory Turnover :=
+DIVIDE(
+    [COGS TTM],
+    [Inventory Value]
+)
+
+Stock Coverage Days :=
+DIVIDE(
+    SUM('inventory_position'[on_hand_quantity]),
+    SUM('inventory_position'[average_daily_units_90d])
+)
+
+Slow-Moving Inventory Value :=
+CALCULATE(
+    [Inventory Value],
+    'inventory_position'[slow_moving_flag] = TRUE()
+)
+
+Excess Inventory Value :=
+SUM('inventory_position'[excess_inventory_value_60d])
+
+Stockout-Risk SKU Count :=
+CALCULATE(
+    DISTINCTCOUNT('inventory_position'[product_key]),
+    'inventory_position'[stockout_risk_flag] = TRUE()
+)
