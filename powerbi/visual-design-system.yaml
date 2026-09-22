@@ -1,0 +1,122 @@
+schema_version: 1
+visual_design_system:
+  id: eoip-power-bi-v1
+  status: pre_render_qa_approved
+  target: Power BI Desktop / PBIR
+
+  canvas:
+    aspect_ratio: "16:9"
+    width: 1440
+    height: 810
+    outer_margin_px: 24
+    grid_columns: 12
+    grid_gap_px: 16
+    header_height_px: 56
+    filter_bar_height_px: 48
+
+  hierarchy:
+    page_header:
+      left: page title
+      right: context note / snapshot note
+    filter_bar:
+      behavior: compact horizontal dropdowns
+      max_visible_filters: 5
+    kpi_strip:
+      position: first analytical row
+      rule: consistent card height within a page
+    analytical_body:
+      rule: driver visuals before detailed tables
+    detail:
+      rule: tables/matrices occupy the lowest visual hierarchy
+
+  semantic_context:
+    commercial_measures:
+      date_behavior: selected report period
+      label: Selected period
+    inventory_measures:
+      date_behavior: latest snapshot, commercial date filter ignored
+      label: Latest inventory snapshot
+    mixed_pages:
+      rule: Always display a visible context note when period and snapshot measures appear together.
+
+  formatting:
+    currency:
+      display_units: auto_k_or_m
+      decimals: 0
+      symbol: EUR
+    percentages:
+      decimals: 1
+    quantities:
+      decimals: 0
+    coverage_days:
+      decimals: 1
+    turnover:
+      decimals: 2
+    negative_values:
+      rule: preserve sign except governed Return Value presentation measure
+
+  visual_rules:
+    kpi_cards:
+      max_per_row: 6
+      subtitle: optional concise methodology/context only
+      comparison_indicator: use only governed comparison measures
+    line_and_clustered_column:
+      primary_axis: currency measures
+      secondary_axis: percentage measure
+      data_labels: last_or_material_points_only
+    horizontal_bar:
+      preferred_top_n: 10
+      sort: descending_by_primary_measure
+      data_labels: true
+    scatter:
+      label_policy: labels_on_selection_or_top_material_points_only
+      reference_line: use where analytical context benefits
+      max_legend_categories: 5
+    matrix:
+      default_state: top_hierarchy_level_expanded
+      conditional_formatting: restrained
+    table:
+      preferred_visible_rows: 10_to_15
+      sort: explicit
+      conditional_formatting: icons_plus_color_when_attention_is_required
+
+  color_semantics:
+    principle: Color supports meaning but is never the only signal.
+    commercial_primary: blue
+    profitability_primary: teal
+    inventory_primary: indigo
+    neutral: slate
+    positive: green_with_text_or_icon
+    attention: amber_with_text_or_icon
+    critical: red_with_text_or_icon
+    rule: Avoid rainbow palettes and unnecessary per-category colors.
+
+  interaction:
+    slicers:
+      sync_commercial_pages: true
+      inventory_date_slicer: false
+    cross_filtering: preferred
+    cross_highlighting: use_when_comparison_remains_readable
+    navigation:
+      preserve_customer_product_warehouse_context: true
+      preserve_commercial_date_context_to_inventory: false
+    reset_filters_button: required
+    back_to_executive_button: required_on_detail_pages
+
+  accessibility:
+    minimum_font_size_pt: 9
+    preferred_body_font_size_pt: 10
+    high_contrast_text: true
+    do_not_rely_on_color_only: true
+    descriptive_titles: true
+    tab_order_required: true
+    alt_text_for_key_visuals: true
+
+  qa_gates:
+    - no_visual_specific_duplicate_kpi_formulas
+    - no_period_snapshot_ambiguity
+    - no_unbounded_attention_tables
+    - no_inventory_optimization_claims
+    - consistent_number_formatting
+    - consistent_navigation
+    - readable_at_100_percent_zoom
