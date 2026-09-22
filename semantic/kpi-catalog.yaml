@@ -1,0 +1,478 @@
+schema_version: 1
+kpi_catalog:
+  id: eoip-v1-kpi-catalog
+  version: "1.0"
+  status: governed_v1
+  owner_work_package: EOIP-06
+  identity_source:
+    repository: danielwauer-maker/enterprise-data-ai-portfolio
+    path: data/eoip/requirements.yaml
+    frozen_count: 18
+
+  global_policies:
+    currency: EUR
+    date_dimension: dw.dim_date
+    return_sign:
+      source_fact_policy: Credit memo quantity, sales and COGS are negative in dw.fact_sales.
+      presentation_policy: Return Value and Return Rate present return magnitude as positive values.
+    divide_by_zero: Return BLANK in DAX and NULL in SQL reference calculations when a denominator is zero.
+    inventory_snapshot:
+      rule: Use the latest available inventory snapshot in the active model context.
+      negative_stock_asset_policy: Negative on-hand is excluded from inventory asset value but remains visible through availability-risk logic.
+    inventory_demand:
+      demand_window_days: 90
+      basis: Positive posted invoice quantity only; returns do not create demand.
+    inventory_turnover:
+      cogs_window_days: 365
+      denominator_policy: Current positive inventory value is used as the EOIP V1 denominator proxy.
+      limitation: Average historical inventory value is not modeled in EOIP V1; deeper inventory methodology belongs to InventoryIQ.
+    slow_moving:
+      threshold_days_without_positive_sale: 90
+    excess_inventory:
+      target_coverage_days: 60
+      method: max(positive_on_hand - trailing_90d_average_daily_units * 60, 0) * unit_cost_at_snapshot
+      limitation: This is a transparent management screening rule, not safety-stock or reorder optimization.
+    stockout_risk:
+      method: Open order quantity exceeds max(available quantity, 0) at product and warehouse position.
+      presentation: Count distinct products with at least one at-risk warehouse position.
+
+  base_measures:
+    - id: gross_sales_base
+      name: Gross Sales
+      dax: "SUM('fact_sales'[gross_sales_signed])"
+    - id: net_sales_base
+      name: Net Sales Base
+      dax: "SUM('fact_sales'[net_sales_signed])"
+    - id: cogs_base
+      name: COGS
+      dax: "SUM('fact_sales'[cogs_signed])"
+    - id: ordered_net_value_base
+      name: Ordered Net Value
+      dax: "SUM('fact_sales_order'[net_order_amount])"
+    - id: invoice_sales_base
+      name: Invoice Sales
+      dax: "CALCULATE([Net Sales Base], 'fact_sales'[source_document_type] = \"invoice\")"
+    - id: return_sales_base
+      name: Credit Memo Sales
+      dax: "CALCULATE([Net Sales Base], 'fact_sales'[source_document_type] = \"credit_memo\")"
+
+  kpis:
+    - id: net_sales
+      name: Net Sales
+      domain: sales
+      format: currency_eur
+      business_definition: Posted invoice sales net of discounts and credit memos/returns.
+      decision_use: Track realized commercial sales performance over time and across customer, product, warehouse and salesperson dimensions.
+      grain: additive across posted sales-document lines
+      numerator: SUM(dw.fact_sales.net_sales_signed)
+      denominator: null
+      source_lineage:
+        tables: [dw.fact_sales]
+        fields: [net_sales_signed]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Fully additive over date; standard date filters apply.
+      sign_policy: Invoice values positive; credit memo values negative.
+      zero_behavior: Returns 0 when no matching sales rows.
+      dax:
+        measure_name: Net Sales
+        expression: "[Net Sales Base]"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_sales
+
+    - id: sales_growth_pct
+      name: Sales Growth %
+      domain: sales
+      format: percentage_1
+      business_definition: Percentage change in Net Sales versus the same filtered period one year earlier.
+      decision_use: Identify whether sales performance is expanding or contracting on a like-for-like time basis.
+      grain: ratio evaluated in current filter context
+      numerator: "[Net Sales] - [Net Sales PY]"
+      denominator: ABS([Net Sales PY])
+      source_lineage:
+        tables: [dw.fact_sales, dw.dim_date]
+        fields: [net_sales_signed, full_date]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Previous-year comparison uses DATEADD over dw.dim_date.full_date.
+      sign_policy: Growth can be positive or negative.
+      zero_behavior: BLANK when previous-year Net Sales is zero.
+      dax:
+        measure_name: Sales Growth %
+        expression: "DIVIDE([Net Sales] - [Net Sales PY], ABS([Net Sales PY]))"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: latest_12_months_vs_previous_12_months
+
+    - id: gross_profit
+      name: Gross Profit
+      domain: margin
+      format: currency_eur
+      business_definition: Net Sales less actual COGS associated with posted sales and return value entries.
+      decision_use: Explain commercial value creation before downstream cost-to-serve components.
+      grain: additive across posted sales-document lines
+      numerator: "[Net Sales] - [COGS]"
+      denominator: null
+      source_lineage:
+        tables: [dw.fact_sales]
+        fields: [net_sales_signed, cogs_signed]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Fully additive over date.
+      sign_policy: Return reversals reduce both sales and COGS.
+      zero_behavior: Returns 0 when both Net Sales and COGS are zero.
+      dax:
+        measure_name: Gross Profit
+        expression: "[Net Sales] - [COGS]"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_sales
+
+    - id: gross_margin_pct
+      name: Gross Margin %
+      domain: margin
+      format: percentage_1
+      business_definition: Gross Profit divided by Net Sales.
+      decision_use: Compare gross-margin quality independently of revenue scale.
+      grain: ratio evaluated in current filter context
+      numerator: "[Gross Profit]"
+      denominator: "[Net Sales]"
+      source_lineage:
+        tables: [dw.fact_sales]
+        fields: [net_sales_signed, cogs_signed]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Recomputed for every filter context; never summed across periods.
+      sign_policy: Follows signed Net Sales and COGS.
+      zero_behavior: BLANK when Net Sales is zero.
+      dax:
+        measure_name: Gross Margin %
+        expression: "DIVIDE([Gross Profit], [Net Sales])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_sales
+
+    - id: order_count
+      name: Order Count
+      domain: sales
+      format: whole_number
+      business_definition: Distinct sales orders created in the active order-date context.
+      decision_use: Track demand-generation activity independently from invoice posting.
+      grain: distinct sales-order header identity represented through order-line fact
+      numerator: DISTINCTCOUNT(dw.fact_sales_order.sales_order_id)
+      denominator: null
+      source_lineage:
+        tables: [dw.fact_sales_order]
+        fields: [sales_order_id, order_date_key]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Uses order date, not invoice posting date.
+      sign_policy: Counts orders regardless of later invoicing status.
+      zero_behavior: Returns 0 when no orders exist.
+      dax:
+        measure_name: Order Count
+        expression: "DISTINCTCOUNT('fact_sales_order'[sales_order_id])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_orders
+
+    - id: average_order_value
+      name: Average Order Value
+      domain: sales
+      format: currency_eur
+      business_definition: Ordered net line value divided by distinct order count.
+      decision_use: Track average commercial order size at order-entry stage.
+      grain: ratio evaluated over sales orders in current order-date context
+      numerator: "[Ordered Net Value]"
+      denominator: "[Order Count]"
+      source_lineage:
+        tables: [dw.fact_sales_order]
+        fields: [net_order_amount, sales_order_id]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Uses order date.
+      sign_policy: Based on order-entry value and does not include later credit memo effects.
+      zero_behavior: BLANK when Order Count is zero.
+      dax:
+        measure_name: Average Order Value
+        expression: "DIVIDE([Ordered Net Value], [Order Count])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_orders
+
+    - id: active_customers
+      name: Active Customers
+      domain: sales
+      format: whole_number
+      business_definition: Distinct customers with posted sales-document activity in the active filter context.
+      decision_use: Monitor breadth of active commercial relationships.
+      grain: distinct customer count over posted sales facts
+      numerator: DISTINCTCOUNT(dw.fact_sales.customer_key)
+      denominator: null
+      source_lineage:
+        tables: [dw.fact_sales]
+        fields: [customer_key, net_sales_signed]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Responds to posting-date filters.
+      sign_policy: Invoice or credit activity qualifies the customer as active.
+      zero_behavior: Returns 0 when no posted sales activity exists.
+      dax:
+        measure_name: Active Customers
+        expression: "CALCULATE(DISTINCTCOUNT('fact_sales'[customer_key]), 'fact_sales'[net_sales_signed] <> 0)"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_sales
+
+    - id: units_sold
+      name: Units Sold
+      domain: sales
+      format: quantity
+      business_definition: Net posted sales quantity after subtracting returned quantities.
+      decision_use: Explain revenue changes through unit-volume movement.
+      grain: additive across posted sales-document lines
+      numerator: SUM(dw.fact_sales.quantity_signed)
+      denominator: null
+      source_lineage:
+        tables: [dw.fact_sales]
+        fields: [quantity_signed]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Fully additive over posting date.
+      sign_policy: Invoice quantity positive; credit memo quantity negative.
+      zero_behavior: Returns 0 when no matching rows exist.
+      dax:
+        measure_name: Units Sold
+        expression: "SUM('fact_sales'[quantity_signed])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_sales
+
+    - id: discount_value
+      name: Discount Value
+      domain: margin
+      format: currency_eur
+      business_definition: Net discount granted on posted sales after reversing discount associated with credit memos.
+      decision_use: Quantify absolute commercial discount leakage.
+      grain: additive across posted sales-document lines
+      numerator: SUM(dw.fact_sales.discount_signed)
+      denominator: null
+      source_lineage:
+        tables: [dw.fact_sales]
+        fields: [discount_signed]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Fully additive over posting date.
+      sign_policy: Invoice discounts positive; return-related discount reversals negative.
+      zero_behavior: Returns 0 when no discounts exist.
+      dax:
+        measure_name: Discount Value
+        expression: "SUM('fact_sales'[discount_signed])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_sales
+
+    - id: discount_rate_pct
+      name: Discount Rate %
+      domain: margin
+      format: percentage_1
+      business_definition: Net Discount Value divided by signed Gross Sales before discount.
+      decision_use: Compare discount intensity independently of sales scale.
+      grain: ratio evaluated in current filter context
+      numerator: "[Discount Value]"
+      denominator: "[Gross Sales]"
+      source_lineage:
+        tables: [dw.fact_sales]
+        fields: [discount_signed, gross_sales_signed]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Recomputed in every filter context.
+      sign_policy: Credit memo discount reversals reduce both numerator and denominator.
+      zero_behavior: BLANK when Gross Sales is zero.
+      dax:
+        measure_name: Discount Rate %
+        expression: "DIVIDE([Discount Value], [Gross Sales])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_sales
+
+    - id: return_value
+      name: Return Value
+      domain: margin
+      format: currency_eur
+      business_definition: Positive magnitude of posted credit-memo Net Sales.
+      decision_use: Quantify sales value reversed through returns and commercial credits.
+      grain: additive across posted credit-memo lines
+      numerator: "-[Credit Memo Sales]"
+      denominator: null
+      source_lineage:
+        tables: [dw.fact_sales]
+        fields: [source_document_type, net_sales_signed]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Uses credit-memo posting date.
+      sign_policy: Source values remain negative; presentation measure returns a positive magnitude.
+      zero_behavior: Returns 0 when no credit memos exist.
+      dax:
+        measure_name: Return Value
+        expression: "-[Credit Memo Sales]"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_sales
+
+    - id: return_rate_pct
+      name: Return Rate %
+      domain: margin
+      format: percentage_1
+      business_definition: Return Value divided by positive posted Invoice Sales before return deductions.
+      decision_use: Compare return/credit leakage independently of sales scale.
+      grain: ratio evaluated in current filter context
+      numerator: "[Return Value]"
+      denominator: "[Invoice Sales]"
+      source_lineage:
+        tables: [dw.fact_sales]
+        fields: [source_document_type, net_sales_signed]
+      dimensions: [date, customer, product, warehouse, salesperson]
+      time_behavior: Uses posting date for both invoices and credits.
+      sign_policy: Return numerator is shown as positive magnitude.
+      zero_behavior: BLANK when Invoice Sales is zero.
+      dax:
+        measure_name: Return Rate %
+        expression: "DIVIDE([Return Value], [Invoice Sales])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: all_loaded_sales
+
+    - id: inventory_value
+      name: Inventory Value
+      domain: inventory
+      format: currency_eur
+      business_definition: Current positive on-hand inventory valued at snapshot unit cost.
+      decision_use: Quantify working capital tied up in physical inventory.
+      grain: additive across latest product and warehouse inventory positions
+      numerator: SUM(semantic.v_inventory_position.positive_inventory_value)
+      denominator: null
+      source_lineage:
+        tables: [semantic.v_inventory_position, dw.fact_inventory_snapshot]
+        fields: [positive_inventory_value, on_hand_quantity, unit_cost_at_snapshot]
+      dimensions: [product, warehouse]
+      time_behavior: Point-in-time; latest available snapshot.
+      sign_policy: Negative on-hand is excluded from asset value and handled through availability-risk logic.
+      zero_behavior: Returns 0 when positive inventory is absent.
+      dax:
+        measure_name: Inventory Value
+        expression: "SUM('inventory_position'[positive_inventory_value])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: latest_inventory_snapshot
+
+    - id: inventory_turnover
+      name: Inventory Turnover
+      domain: inventory
+      format: decimal_2
+      business_definition: Trailing 365-day net COGS divided by current positive Inventory Value.
+      decision_use: Screen how efficiently current inventory supports recent cost-of-sales throughput.
+      grain: ratio evaluated for the selected inventory/product context
+      numerator: trailing_365d_net_cogs
+      denominator: "[Inventory Value]"
+      source_lineage:
+        tables: [dw.fact_sales, dw.dim_date, semantic.v_inventory_position]
+        fields: [cogs_signed, full_date, positive_inventory_value]
+      dimensions: [product, warehouse]
+      time_behavior: Numerator uses trailing 365 days ending at latest snapshot date; denominator is current snapshot.
+      sign_policy: Return COGS reversals reduce trailing COGS.
+      zero_behavior: BLANK when Inventory Value is zero.
+      assumptions:
+        - EOIP V1 uses current inventory value rather than average historical inventory value.
+        - This is an explicit screening proxy, not InventoryIQ optimization logic.
+      dax:
+        measure_name: Inventory Turnover
+        expression: "DIVIDE([COGS TTM], [Inventory Value])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: trailing_365d_cogs_over_current_positive_inventory_value
+
+    - id: stock_coverage_days
+      name: Stock Coverage Days
+      domain: inventory
+      format: decimal_1
+      business_definition: Current on-hand quantity divided by trailing 90-day average daily positive invoice demand.
+      decision_use: Identify inventory positions whose stock is high or low relative to recent demand.
+      grain: ratio across current product and warehouse inventory positions
+      numerator: SUM(on_hand_quantity)
+      denominator: SUM(average_daily_units_90d)
+      source_lineage:
+        tables: [semantic.v_inventory_position]
+        fields: [on_hand_quantity, average_daily_units_90d]
+      dimensions: [product, warehouse]
+      time_behavior: Point-in-time snapshot with trailing 90-day demand window.
+      sign_policy: Demand uses positive invoice quantity only; returns do not reduce demand baseline.
+      zero_behavior: BLANK in DAX when trailing average daily demand is zero.
+      dax:
+        measure_name: Stock Coverage Days
+        expression: "DIVIDE(SUM('inventory_position'[on_hand_quantity]), SUM('inventory_position'[average_daily_units_90d]))"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: current_on_hand_over_trailing_90d_average_daily_invoice_units
+
+    - id: slow_moving_inventory_value
+      name: Slow-Moving Inventory Value
+      domain: inventory
+      format: currency_eur
+      business_definition: Positive inventory value for positions with no positive posted invoice quantity in the trailing 90 days.
+      decision_use: Surface working capital tied up in inventory with weak recent movement.
+      grain: additive across flagged current product and warehouse positions
+      numerator: SUM(positive_inventory_value WHERE slow_moving_flag = TRUE)
+      denominator: null
+      source_lineage:
+        tables: [semantic.v_inventory_position]
+        fields: [positive_inventory_value, slow_moving_flag, last_positive_sale_date]
+      dimensions: [product, warehouse]
+      time_behavior: Evaluated against latest snapshot date and trailing 90-day activity.
+      sign_policy: Only positive inventory asset value contributes.
+      zero_behavior: Returns 0 when no positions are slow-moving.
+      dax:
+        measure_name: Slow-Moving Inventory Value
+        expression: "CALCULATE([Inventory Value], 'inventory_position'[slow_moving_flag] = TRUE())"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: no_positive_invoice_units_in_trailing_90_days
+
+    - id: excess_inventory_value
+      name: Excess Inventory Value
+      domain: inventory
+      format: currency_eur
+      business_definition: Value of positive on-hand inventory above 60 days of demand based on trailing 90-day average daily invoice units.
+      decision_use: Screen inventory positions with potential working-capital release opportunity.
+      grain: additive across current product and warehouse positions
+      numerator: SUM(excess_inventory_value_60d)
+      denominator: null
+      source_lineage:
+        tables: [semantic.v_inventory_position]
+        fields: [excess_inventory_value_60d, average_daily_units_90d, on_hand_quantity, unit_cost_at_snapshot]
+      dimensions: [product, warehouse]
+      time_behavior: Point-in-time snapshot with trailing 90-day demand window.
+      sign_policy: Only positive on-hand quantity can create excess value.
+      zero_behavior: Returns 0 when no excess positions exist.
+      assumptions:
+        - 60 target coverage days is an EOIP V1 management-screening policy.
+        - This is not a safety-stock or reorder recommendation.
+      dax:
+        measure_name: Excess Inventory Value
+        expression: "SUM('inventory_position'[excess_inventory_value_60d])"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: inventory_above_60_days_of_trailing_90d_average_demand
+
+    - id: stockout_risk_sku_count
+      name: Stockout-Risk SKU Count
+      domain: inventory
+      format: whole_number
+      business_definition: Distinct products with at least one warehouse where open order quantity exceeds non-negative available stock.
+      decision_use: Prioritize products whose current availability cannot cover known open demand.
+      grain: distinct product count across flagged current product and warehouse positions
+      numerator: DISTINCTCOUNT(product_key WHERE stockout_risk_flag = TRUE)
+      denominator: null
+      source_lineage:
+        tables: [semantic.v_inventory_position, dw.fact_sales_order, dw.fact_inventory_snapshot]
+        fields: [product_key, stockout_risk_flag, open_order_quantity, available_quantity]
+      dimensions: [product, warehouse]
+      time_behavior: Point-in-time snapshot using currently open order demand.
+      sign_policy: Negative available stock is treated as zero available for risk comparison.
+      zero_behavior: Returns 0 when no products are at risk.
+      dax:
+        measure_name: Stockout-Risk SKU Count
+        expression: "CALCULATE(DISTINCTCOUNT('inventory_position'[product_key]), 'inventory_position'[stockout_risk_flag] = TRUE())"
+      sql_reference:
+        view: semantic.v_kpi_reference
+        scope: distinct_products_with_open_demand_above_available_quantity
