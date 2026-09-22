@@ -38,6 +38,7 @@ def test_postgres_raw_and_staging_pipeline():
             "030_dw_tables.sql",
             "040_semantic_views.sql",
             "050_sales_margin_reporting_views.sql",
+            "060_executive_overview_views.sql",
         ]
 
         loaded = load_dataset(connection, dataset, truncate=True)
