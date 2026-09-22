@@ -3,18 +3,30 @@ table _Measures
 	measure 'Gross Sales' = ```
 			SUM('fact_sales'[gross_sales_signed])
 			```
+		formatString: €#,##0.00
+		displayFolder: "_Helpers"
+		isHidden
 
 	measure 'Net Sales Base' = ```
 			SUM('fact_sales'[net_sales_signed])
 			```
+		formatString: €#,##0.00
+		displayFolder: "_Helpers"
+		isHidden
 
 	measure 'COGS' = ```
 			SUM('fact_sales'[cogs_signed])
 			```
+		formatString: €#,##0.00
+		displayFolder: "_Helpers"
+		isHidden
 
 	measure 'Ordered Net Value' = ```
 			SUM('fact_sales_order'[net_order_amount])
 			```
+		formatString: €#,##0.00
+		displayFolder: "_Helpers"
+		isHidden
 
 	measure 'Invoice Sales' = ```
 			CALCULATE(
@@ -22,6 +34,9 @@ table _Measures
 			    'fact_sales'[source_document_type] = "invoice"
 			)
 			```
+		formatString: €#,##0.00
+		displayFolder: "_Helpers"
+		isHidden
 
 	measure 'Credit Memo Sales' = ```
 			CALCULATE(
@@ -29,6 +44,9 @@ table _Measures
 			    'fact_sales'[source_document_type] = "credit_memo"
 			)
 			```
+		formatString: €#,##0.00
+		displayFolder: "_Helpers"
+		isHidden
 
 	measure 'Net Sales PY' = ```
 			CALCULATE(
@@ -36,6 +54,9 @@ table _Measures
 			    DATEADD('dim_date'[full_date], -1, YEAR)
 			)
 			```
+		formatString: €#,##0.00
+		displayFolder: "_Helpers"
+		isHidden
 
 	measure 'COGS TTM' = ```
 			VAR SnapshotDate =
@@ -55,10 +76,15 @@ table _Measures
 			        )
 			    )
 			```
+		formatString: €#,##0.00
+		displayFolder: "_Helpers"
+		isHidden
 
 	measure 'Net Sales' = ```
 			[Net Sales Base]
 			```
+		formatString: €#,##0.00
+		displayFolder: "01 Sales"
 
 	measure 'Sales Growth %' = ```
 			DIVIDE(
@@ -66,10 +92,14 @@ table _Measures
 			    ABS([Net Sales PY])
 			)
 			```
+		formatString: 0.0%
+		displayFolder: "01 Sales"
 
 	measure 'Gross Profit' = ```
 			[Net Sales] - [COGS]
 			```
+		formatString: €#,##0.00
+		displayFolder: "02 Margin"
 
 	measure 'Gross Margin %' = ```
 			DIVIDE(
@@ -77,10 +107,14 @@ table _Measures
 			    [Net Sales]
 			)
 			```
+		formatString: 0.0%
+		displayFolder: "02 Margin"
 
 	measure 'Order Count' = ```
 			DISTINCTCOUNT('fact_sales_order'[sales_order_id])
 			```
+		formatString: #,##0
+		displayFolder: "01 Sales"
 
 	measure 'Average Order Value' = ```
 			DIVIDE(
@@ -88,6 +122,8 @@ table _Measures
 			    [Order Count]
 			)
 			```
+		formatString: €#,##0.00
+		displayFolder: "01 Sales"
 
 	measure 'Active Customers' = ```
 			CALCULATE(
@@ -95,14 +131,20 @@ table _Measures
 			    'fact_sales'[net_sales_signed] <> 0
 			)
 			```
+		formatString: #,##0
+		displayFolder: "01 Sales"
 
 	measure 'Units Sold' = ```
 			SUM('fact_sales'[quantity_signed])
 			```
+		formatString: #,##0
+		displayFolder: "01 Sales"
 
 	measure 'Discount Value' = ```
 			SUM('fact_sales'[discount_signed])
 			```
+		formatString: €#,##0.00
+		displayFolder: "02 Margin"
 
 	measure 'Discount Rate %' = ```
 			DIVIDE(
@@ -110,10 +152,14 @@ table _Measures
 			    [Gross Sales]
 			)
 			```
+		formatString: 0.0%
+		displayFolder: "02 Margin"
 
 	measure 'Return Value' = ```
 			-[Credit Memo Sales]
 			```
+		formatString: €#,##0.00
+		displayFolder: "02 Margin"
 
 	measure 'Return Rate %' = ```
 			DIVIDE(
@@ -121,6 +167,8 @@ table _Measures
 			    [Invoice Sales]
 			)
 			```
+		formatString: 0.0%
+		displayFolder: "02 Margin"
 
 	measure 'Inventory Value' = ```
 			CALCULATE(
@@ -128,6 +176,8 @@ table _Measures
 			    REMOVEFILTERS('dim_date')
 			)
 			```
+		formatString: €#,##0.00
+		displayFolder: "03 Inventory"
 
 	measure 'Inventory Turnover' = ```
 			DIVIDE(
@@ -135,6 +185,8 @@ table _Measures
 			    [Inventory Value]
 			)
 			```
+		formatString: 0.00
+		displayFolder: "03 Inventory"
 
 	measure 'Stock Coverage Days' = ```
 			CALCULATE(
@@ -145,6 +197,8 @@ table _Measures
 			    REMOVEFILTERS('dim_date')
 			)
 			```
+		formatString: 0.0
+		displayFolder: "03 Inventory"
 
 	measure 'Slow-Moving Inventory Value' = ```
 			CALCULATE(
@@ -153,6 +207,8 @@ table _Measures
 			    'inventory_position'[slow_moving_flag] = TRUE()
 			)
 			```
+		formatString: €#,##0.00
+		displayFolder: "03 Inventory"
 
 	measure 'Excess Inventory Value' = ```
 			CALCULATE(
@@ -160,6 +216,8 @@ table _Measures
 			    REMOVEFILTERS('dim_date')
 			)
 			```
+		formatString: €#,##0.00
+		displayFolder: "03 Inventory"
 
 	measure 'Stockout-Risk SKU Count' = ```
 			CALCULATE(
@@ -168,6 +226,8 @@ table _Measures
 			    'inventory_position'[stockout_risk_flag] = TRUE()
 			)
 			```
+		formatString: #,##0
+		displayFolder: "03 Inventory"
 
 	column Value
 		dataType: int64
