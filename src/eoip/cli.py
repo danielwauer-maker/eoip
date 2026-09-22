@@ -17,6 +17,7 @@ from .database import (
     write_database_validation,
 )
 from .generator import ERPGenerator, dataset_fingerprint, export_dataset
+from .powerbi import sync_powerbi_measures
 from .validate import validate_dataset
 
 
@@ -68,6 +69,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--validation-output",
         default="data/dw-validation.json",
         help="Path for dimensional-model validation JSON.",
+    )
+
+    sync_measures = sub.add_parser(
+        "sync-powerbi-measures",
+        help="Generate the PBIP _Measures TMDL table from canonical powerbi/measures.dax.",
+    )
+    sync_measures.add_argument(
+        "--dax",
+        default="powerbi/measures.dax",
+        help="Canonical DAX measure source.",
+    )
+    sync_measures.add_argument(
+        "--output",
+        default="powerbi/EOIP/EOIP.SemanticModel/definition/tables/_Measures.tmdl",
+        help="Generated PBIP TMDL measure-table output.",
     )
 
     return parser
@@ -166,6 +182,12 @@ def run_build_dw(args: argparse.Namespace) -> int:
     return 0 if validation["passed"] else 2
 
 
+def run_sync_powerbi_measures(args: argparse.Namespace) -> int:
+    result = sync_powerbi_measures(args.dax, args.output)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 0
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -176,6 +198,8 @@ def main() -> None:
         raise SystemExit(run_load_db(args))
     if args.command == "build-dw":
         raise SystemExit(run_build_dw(args))
+    if args.command == "sync-powerbi-measures":
+        raise SystemExit(run_sync_powerbi_measures(args))
 
     raise SystemExit(1)
 
