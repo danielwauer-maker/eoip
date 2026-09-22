@@ -1,0 +1,119 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 300
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 69.1985258728746,
+            "y": -3.8894355046720648
+          },
+          "nodeIndex": "dim_customer",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 337.04100706607119,
+            "y": 949.55794445776951
+          },
+          "nodeIndex": "dim_date",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 643.15420174352334,
+            "y": -50
+          },
+          "nodeIndex": "dim_product",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 637.87056083051266,
+            "y": 794.86747086326045
+          },
+          "nodeIndex": "dim_salesperson",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": 776.98333021311964
+          },
+          "nodeIndex": "dim_warehouse",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 356.179649120265,
+            "y": 242.32288972062247
+          },
+          "nodeIndex": "fact_sales",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 351.16845981439388,
+            "y": 595.90534905676793
+          },
+          "nodeIndex": "fact_sales_order",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 904.15420174352323,
+            "y": 376.77897222888475
+          },
+          "nodeIndex": "inventory_position",
+          "nodeLineageTag": "22509b03-a9a6-4783-b913-13f096ea05be",
+          "size": {
+            "height": 432,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Alle Tabellen",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Alle Tabellen",
+  "defaultDiagram": "Alle Tabellen"
+}

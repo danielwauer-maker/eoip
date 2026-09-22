@@ -1,0 +1,138 @@
+table dim_product
+	lineageTag: f8972f09-5f86-482b-9b4c-52fa3804dcfd
+
+	column product_key
+		dataType: int64
+		formatString: 0
+		lineageTag: d933c318-f154-4c0b-b38c-5b407114dc97
+		summarizeBy: none
+		sourceColumn: product_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_id
+		dataType: string
+		lineageTag: c8d22599-3e6e-4c94-8fd0-988ffd36419f
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_no
+		dataType: string
+		lineageTag: c03fa5b9-73c9-4604-8c65-abadf65452c7
+		summarizeBy: none
+		sourceColumn: product_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_name
+		dataType: string
+		lineageTag: fe8c8fc9-2c25-4b3a-927d-b1c84301869f
+		summarizeBy: none
+		sourceColumn: product_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_category_id
+		dataType: string
+		lineageTag: 618e364a-d9f2-4642-8c3a-74d291312cb4
+		summarizeBy: none
+		sourceColumn: product_category_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column category_code
+		dataType: string
+		lineageTag: 52b9e5dc-eca1-46e0-bf92-c24efd85ee61
+		summarizeBy: none
+		sourceColumn: category_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column category_name
+		dataType: string
+		lineageTag: 6e12ba39-b69a-4155-8a49-763e8ff5e463
+		summarizeBy: none
+		sourceColumn: category_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column base_unit_of_measure
+		dataType: string
+		lineageTag: ef2a50e1-1fc6-470a-bd4e-2260c9af6af9
+		summarizeBy: none
+		sourceColumn: base_unit_of_measure
+
+		annotation SummarizationSetBy = Automatic
+
+	column standard_sales_price
+		dataType: double
+		lineageTag: 8ffc9f8a-2dd4-484f-bedc-70767112a3bd
+		summarizeBy: sum
+		sourceColumn: standard_sales_price
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column standard_unit_cost
+		dataType: double
+		lineageTag: 8a6af20d-8b8c-444e-9126-b1122fd2e370
+		summarizeBy: sum
+		sourceColumn: standard_unit_cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column preferred_supplier_id
+		dataType: string
+		lineageTag: 2cc8b16c-d825-426f-9dcb-039941e0ebed
+		summarizeBy: none
+		sourceColumn: preferred_supplier_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column replenishment_lead_time_days
+		dataType: int64
+		formatString: 0
+		lineageTag: 36a415b7-106f-46db-8245-0441ecf7f4e8
+		summarizeBy: sum
+		sourceColumn: replenishment_lead_time_days
+
+		annotation SummarizationSetBy = Automatic
+
+	column discontinued_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: a7f18cc1-69f5-442c-a81e-809eb8568708
+		summarizeBy: none
+		sourceColumn: discontinued_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column created_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: adc77d89-2c74-4c7c-a8c4-af782933036e
+		summarizeBy: none
+		sourceColumn: created_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition dim_product = m
+		mode: import
+		source =
+				let
+				    Quelle = PostgreSQL.Database("localhost:5433", "eoip"),
+				    dw_dim_product = Quelle{[Schema="dw",Item="dim_product"]}[Data]
+				in
+				    dw_dim_product
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,178 @@
+table fact_sales_order
+	lineageTag: 1367fc13-b7c1-4e86-8d05-2496c9fde078
+
+	column sales_order_fact_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 52b8d802-ef28-4297-a7d2-b99f2bc7819d
+		summarizeBy: sum
+		sourceColumn: sales_order_fact_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column order_date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: bbd2d782-7a97-4d09-892c-be1ea4cd1b63
+		summarizeBy: none
+		sourceColumn: order_date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column promised_delivery_date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 5e80d301-372a-48e2-9faf-31ae97976490
+		summarizeBy: sum
+		sourceColumn: promised_delivery_date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 67a1e6ed-ceab-422d-b7f8-78f72121ed81
+		summarizeBy: none
+		sourceColumn: customer_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 6aa7ac73-ea87-48a3-b03b-dfc2f12990bf
+		summarizeBy: none
+		sourceColumn: product_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column warehouse_key
+		dataType: int64
+		formatString: 0
+		lineageTag: b33eaaea-a982-46a4-be35-b0092a704703
+		summarizeBy: none
+		sourceColumn: warehouse_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column salesperson_key
+		dataType: int64
+		formatString: 0
+		lineageTag: e02974cc-22d5-45fc-9868-1e4419c75d87
+		summarizeBy: none
+		sourceColumn: salesperson_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column sales_order_id
+		dataType: string
+		lineageTag: de8516e4-b331-4b10-91a0-8de345656067
+		summarizeBy: none
+		sourceColumn: sales_order_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column order_no
+		dataType: string
+		lineageTag: 4e1ebdde-25a6-4033-9b07-f62b13b3dade
+		summarizeBy: none
+		sourceColumn: order_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column sales_order_line_id
+		dataType: string
+		lineageTag: 3d3ddbb0-1b21-45f0-b192-c787feaa408d
+		summarizeBy: none
+		sourceColumn: sales_order_line_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column line_no
+		dataType: int64
+		formatString: 0
+		lineageTag: 113717e5-a032-4f8c-b84e-dd9162ad86f4
+		summarizeBy: sum
+		sourceColumn: line_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column order_status
+		dataType: string
+		lineageTag: fa33077c-df67-4166-90de-6aa8a27f56ea
+		summarizeBy: none
+		sourceColumn: order_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column line_status
+		dataType: string
+		lineageTag: e8e59081-540f-498a-9944-ce9c13aecd8d
+		summarizeBy: none
+		sourceColumn: line_status
+
+		annotation SummarizationSetBy = Automatic
+
+	column ordered_quantity
+		dataType: double
+		lineageTag: fedb132d-b8aa-47ef-886d-d792e0c96b4f
+		summarizeBy: sum
+		sourceColumn: ordered_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column shipped_quantity
+		dataType: double
+		lineageTag: 3b0703e8-bb85-4b31-b7d8-c9b49fcb2034
+		summarizeBy: sum
+		sourceColumn: shipped_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column invoiced_quantity
+		dataType: double
+		lineageTag: b1d64914-84c7-49c2-aa5b-3e1ba9b66a35
+		summarizeBy: sum
+		sourceColumn: invoiced_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column outstanding_quantity
+		dataType: double
+		lineageTag: 07b93df1-9b1c-4d3a-801c-7873c25dd2a8
+		summarizeBy: sum
+		sourceColumn: outstanding_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column net_order_amount
+		dataType: double
+		lineageTag: a04f5c51-5483-4991-bdd9-45a1835f580d
+		summarizeBy: sum
+		sourceColumn: net_order_amount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fact_sales_order = m
+		mode: import
+		source =
+				let
+				    Quelle = PostgreSQL.Database("localhost:5433", "eoip"),
+				    dw_fact_sales_order = Quelle{[Schema="dw",Item="fact_sales_order"]}[Data]
+				in
+				    dw_fact_sales_order
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+

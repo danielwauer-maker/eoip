@@ -1,0 +1,203 @@
+table inventory_position
+	lineageTag: 22509b03-a9a6-4783-b913-13f096ea05be
+
+	column snapshot_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 77b4b643-95ef-4f4f-a421-33f428b06e4a
+		summarizeBy: none
+		sourceColumn: snapshot_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column product_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 49b7f187-7cbb-4108-b5c4-d4e88151b7a7
+		summarizeBy: none
+		sourceColumn: product_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column warehouse_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 3f699956-dd5d-4bd0-b416-6f3572e918f0
+		summarizeBy: none
+		sourceColumn: warehouse_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column on_hand_quantity
+		dataType: double
+		lineageTag: b58e3768-3cf1-4d07-96a0-fa6dc304a8c8
+		summarizeBy: sum
+		sourceColumn: on_hand_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column reserved_quantity
+		dataType: double
+		lineageTag: 17932268-eb3e-40c5-8d0b-d786c1960bb0
+		summarizeBy: sum
+		sourceColumn: reserved_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column available_quantity
+		dataType: double
+		lineageTag: b4dde206-1671-4f6f-a5fc-a55a1561a493
+		summarizeBy: sum
+		sourceColumn: available_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column unit_cost_at_snapshot
+		dataType: double
+		lineageTag: 854a19c5-ac0e-408c-be51-ce5de677d2e3
+		summarizeBy: sum
+		sourceColumn: unit_cost_at_snapshot
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column positive_inventory_value
+		dataType: double
+		lineageTag: 2ad2e5f9-b022-4282-b5b6-dda6a2b201a5
+		summarizeBy: sum
+		sourceColumn: positive_inventory_value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column trailing_90d_invoice_units
+		dataType: double
+		lineageTag: 5d315def-ba63-4ac3-8f8c-ee685b08bb7a
+		summarizeBy: sum
+		sourceColumn: trailing_90d_invoice_units
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column average_daily_units_90d
+		dataType: double
+		lineageTag: 61271171-3197-49c8-a064-81430b3b9a84
+		summarizeBy: sum
+		sourceColumn: average_daily_units_90d
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column last_positive_sale_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 2256390b-5c07-4ee5-92e6-d3e74e8cff17
+		summarizeBy: none
+		sourceColumn: last_positive_sale_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column days_since_last_positive_sale
+		dataType: int64
+		formatString: 0
+		lineageTag: 89d3077f-938d-49b2-81c7-c9745453d67e
+		summarizeBy: sum
+		sourceColumn: days_since_last_positive_sale
+
+		annotation SummarizationSetBy = Automatic
+
+	column open_order_quantity
+		dataType: double
+		lineageTag: 35edf9eb-8e12-48b3-9c70-ad65bf9f946a
+		summarizeBy: sum
+		sourceColumn: open_order_quantity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column stock_coverage_days
+		dataType: double
+		lineageTag: 61454df7-677c-4bb0-b50b-bc05b14043b0
+		summarizeBy: sum
+		sourceColumn: stock_coverage_days
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column slow_moving_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 18bd8c16-0596-477f-a555-f778010e29ac
+		summarizeBy: none
+		sourceColumn: slow_moving_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column target_stock_quantity_60d
+		dataType: double
+		lineageTag: 81aacddd-c927-458c-820d-d01d39171e19
+		summarizeBy: sum
+		sourceColumn: target_stock_quantity_60d
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column excess_quantity_60d
+		dataType: double
+		lineageTag: bbfdfb60-c07d-428a-bb3b-80110b40fc62
+		summarizeBy: sum
+		sourceColumn: excess_quantity_60d
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column excess_inventory_value_60d
+		dataType: double
+		lineageTag: fd67d9c8-7747-4b14-af0c-591f6a54ae85
+		summarizeBy: sum
+		sourceColumn: excess_inventory_value_60d
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column stockout_risk_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: a824356c-804d-4e6f-aadb-871eefa4d712
+		summarizeBy: none
+		sourceColumn: stockout_risk_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	partition inventory_position = m
+		mode: import
+		source =
+				let
+				    Quelle = PostgreSQL.Database("localhost:5433", "eoip"),
+				    semantic_v_inventory_position = Quelle{[Schema="semantic",Item="v_inventory_position"]}[Data]
+				in
+				    semantic_v_inventory_position
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+

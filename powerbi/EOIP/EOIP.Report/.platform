@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "EOIP"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "8fda5cd2-8c07-465e-9890-2cf1920bf92f"
+  }
+}

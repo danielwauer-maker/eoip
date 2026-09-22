@@ -1,0 +1,75 @@
+relationship b7dd0df1-b79b-4e67-a524-18f04a2d6e20
+	fromColumn: fact_sales_order.order_date_key
+	toColumn: dim_date.date_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship 21725307-4fc6-4f29-b3da-020136c4070e
+	isActive: false
+	fromColumn: fact_sales_order.promised_delivery_date_key
+	toColumn: dim_date.date_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship 18598e17-e090-443d-bd2f-6dc2e2894c23
+	fromColumn: fact_sales_order.product_key
+	toColumn: dim_product.product_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship 645652b9-a8d6-4827-a20c-82245e92090e
+	fromColumn: fact_sales_order.customer_key
+	toColumn: dim_customer.customer_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship dd66375b-61b0-4a94-b3df-8a178c56df61
+	fromColumn: fact_sales_order.warehouse_key
+	toColumn: dim_warehouse.warehouse_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship 9abbf526-8df7-4d3c-89ec-d54d660da81e
+	fromColumn: fact_sales_order.salesperson_key
+	toColumn: dim_salesperson.salesperson_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship d6f92d6c-321a-483e-a49f-2996b840841a
+	fromColumn: fact_sales.date_key
+	toColumn: dim_date.date_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship f071522f-9822-4936-b18b-976607c352da
+	fromColumn: fact_sales.product_key
+	toColumn: dim_product.product_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship f8f5ae73-ef46-4a01-ac10-cc367f0c431d
+	fromColumn: fact_sales.customer_key
+	toColumn: dim_customer.customer_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship fe53eaed-fa52-472e-9752-5e9c51d217b0
+	fromColumn: fact_sales.warehouse_key
+	toColumn: dim_warehouse.warehouse_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship f2dbe95f-3322-4c1e-bf82-7349570ed916
+	fromColumn: fact_sales.salesperson_key
+	toColumn: dim_salesperson.salesperson_key
+
+	annotation PBI_IsFromSource = FS
+
+relationship 9f83560a-52e9-ec49-9c41-70f1ce658c85
+	fromColumn: inventory_position.product_key
+	toColumn: dim_product.product_key
+
+relationship 2db74d02-8051-0cd9-35cf-847f238202dc
+	fromColumn: inventory_position.warehouse_key
+	toColumn: dim_warehouse.warehouse_key
+

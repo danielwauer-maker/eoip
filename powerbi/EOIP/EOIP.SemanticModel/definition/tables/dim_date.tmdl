@@ -1,0 +1,125 @@
+table dim_date
+	lineageTag: 1af5f022-ac43-44f5-9e66-68bddff9546e
+	dataCategory: Time
+
+	column date_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 5f64ca7b-638c-4dfd-825f-dc968e12569d
+		summarizeBy: none
+		sourceColumn: date_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column full_date
+		dataType: dateTime
+		isKey
+		formatString: Long Date
+		lineageTag: 5e6e3460-8449-4003-8bd3-537fa573bb13
+		summarizeBy: none
+		sourceColumn: full_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column calendar_year
+		dataType: int64
+		formatString: 0
+		lineageTag: 3b53f9a9-0d47-4e05-95b2-dff6f3bffad4
+		summarizeBy: sum
+		sourceColumn: calendar_year
+
+		annotation SummarizationSetBy = Automatic
+
+	column calendar_quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: 47893bee-2829-49b3-8fdd-5506e1528842
+		summarizeBy: sum
+		sourceColumn: calendar_quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column calendar_month
+		dataType: int64
+		formatString: 0
+		lineageTag: 495941ff-7ebf-46a8-9d11-02538cdffd47
+		summarizeBy: sum
+		sourceColumn: calendar_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_name
+		dataType: string
+		lineageTag: 79d6b639-b086-4662-8208-4002a191b2c3
+		summarizeBy: none
+		sourceColumn: month_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column year_month
+		dataType: string
+		lineageTag: 7387b2f2-c059-445d-8dc1-2673a59540fc
+		summarizeBy: none
+		sourceColumn: year_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column iso_week
+		dataType: int64
+		formatString: 0
+		lineageTag: 75792233-cd0c-4efe-ad83-ac4efef1f4be
+		summarizeBy: sum
+		sourceColumn: iso_week
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_of_month
+		dataType: int64
+		formatString: 0
+		lineageTag: 0f163aeb-30fa-4455-8a03-9ecd01706899
+		summarizeBy: sum
+		sourceColumn: day_of_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column iso_day_of_week
+		dataType: int64
+		formatString: 0
+		lineageTag: 3a606540-5296-423f-9573-46b4cd1090f9
+		summarizeBy: sum
+		sourceColumn: iso_day_of_week
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_name
+		dataType: string
+		lineageTag: ed6e9925-1a02-4d89-9508-499c31a3292d
+		summarizeBy: none
+		sourceColumn: day_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_weekend
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d904517e-935e-41d2-8dc4-6424775f8274
+		summarizeBy: none
+		sourceColumn: is_weekend
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Quelle = PostgreSQL.Database("localhost:5433", "eoip"),
+				    dw_dim_date = Quelle{[Schema="dw",Item="dim_date"]}[Data]
+				in
+				    dw_dim_date
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+

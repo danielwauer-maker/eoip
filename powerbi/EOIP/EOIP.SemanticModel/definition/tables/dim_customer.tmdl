@@ -1,0 +1,101 @@
+table dim_customer
+	lineageTag: 79659977-8c58-4ee6-8fe3-f894d2d73868
+
+	column customer_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 9053328b-6ddb-4a78-aaae-fc94d3049964
+		summarizeBy: none
+		sourceColumn: customer_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_id
+		dataType: string
+		lineageTag: 85cb9e09-5aa8-41a1-954a-f9d6d9aea8b5
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_no
+		dataType: string
+		lineageTag: a05e7f82-44dd-411b-aa01-769f0d1b13c7
+		summarizeBy: none
+		sourceColumn: customer_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_name
+		dataType: string
+		lineageTag: eb982ac5-d6fe-48cc-98c0-121a1268f68d
+		summarizeBy: none
+		sourceColumn: customer_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_group
+		dataType: string
+		lineageTag: 3ecc5c86-f714-4683-9a5b-c26117c0bdfd
+		summarizeBy: none
+		sourceColumn: customer_group
+
+		annotation SummarizationSetBy = Automatic
+
+	column country_code
+		dataType: string
+		lineageTag: a042d9dc-8e05-4a5f-a403-dbbce6a04342
+		summarizeBy: none
+		sourceColumn: country_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column postal_region
+		dataType: string
+		lineageTag: 421d626d-3001-4480-a2bd-e2d4d2d97a12
+		summarizeBy: none
+		sourceColumn: postal_region
+
+		annotation SummarizationSetBy = Automatic
+
+	column payment_terms_code
+		dataType: string
+		lineageTag: ac09a9a1-e72c-47b2-b43e-833e0ed13f51
+		summarizeBy: none
+		sourceColumn: payment_terms_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column blocked_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: a5a4f253-d11b-4f41-b2b1-6de9b93b3ea7
+		summarizeBy: none
+		sourceColumn: blocked_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column created_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: fc51938a-13a8-4520-96d4-ad53d5e5780e
+		summarizeBy: none
+		sourceColumn: created_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition dim_customer = m
+		mode: import
+		source =
+				let
+				    Quelle = PostgreSQL.Database("localhost:5433", "eoip"),
+				    dw_dim_customer = Quelle{[Schema="dw",Item="dim_customer"]}[Data]
+				in
+				    dw_dim_customer
+
+	changedProperty = Name
+
+	annotation PBI_ResultType = Table
+
