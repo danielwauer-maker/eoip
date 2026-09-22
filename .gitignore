@@ -7,3 +7,11 @@ data/generated-*/
 dist/
 build/
 *.egg-info/
+
+# Local validation output
+data/dw-validation.json
+
+# Power BI Project local/binary artifacts
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+powerbi/**/*.pbix
