@@ -1,0 +1,311 @@
+schema_version: 1
+report:
+  id: eoip-v1-sales-margin-intelligence
+  work_package: EOIP-08
+  status: power_bi_ready
+  purpose: Explain sales performance and gross-margin leakage using the governed EOIP KPI layer.
+  page_canvas:
+    aspect_ratio: "16:9"
+    width: 1440
+    height: 810
+    grid_columns: 12
+    outer_margin: 24
+    gap: 16
+
+  global_filters:
+    - id: date_range
+      field: dim_date.full_date
+      type: between
+      default: latest_12_complete_months
+    - id: customer_group
+      field: dim_customer.customer_group
+      type: dropdown
+      default: all
+    - id: product_category
+      field: dim_product.category_name
+      type: dropdown
+      default: all
+    - id: warehouse
+      field: dim_warehouse.warehouse_name
+      type: dropdown
+      default: all
+    - id: salesperson
+      field: dim_salesperson.display_name
+      type: dropdown
+      default: all
+
+  navigation:
+    order:
+      - sales_performance
+      - margin_discount
+      - customer_product
+    preserve_filter_context: true
+
+  pages:
+    - id: sales_performance
+      name: Sales Performance
+      purpose: Explain realized sales growth, volume and demand activity over time and by major commercial drivers.
+      business_questions:
+        - Are sales growing or contracting versus the same period last year?
+        - Is change driven by units, order activity or average order size?
+        - Which categories and commercial owners explain the largest sales contribution?
+      visual_count: 9
+      visuals:
+        - id: sales_net_sales_card
+          type: kpi_card
+          title: Net Sales
+          position: {x: 0, y: 0, w: 2, h: 1}
+          kpis: [net_sales]
+          decision_use: Establish realized sales scale in current filter context.
+        - id: sales_growth_card
+          type: kpi_card
+          title: Sales Growth %
+          position: {x: 2, y: 0, w: 2, h: 1}
+          kpis: [sales_growth_pct]
+          decision_use: Identify like-for-like sales expansion or contraction.
+        - id: sales_units_card
+          type: kpi_card
+          title: Units Sold
+          position: {x: 4, y: 0, w: 2, h: 1}
+          kpis: [units_sold]
+          decision_use: Separate unit-volume movement from price/mix effects.
+        - id: sales_orders_card
+          type: kpi_card
+          title: Orders
+          position: {x: 6, y: 0, w: 2, h: 1}
+          kpis: [order_count]
+          decision_use: Track order-entry activity behind posted sales.
+        - id: sales_aov_card
+          type: kpi_card
+          title: Average Order Value
+          position: {x: 8, y: 0, w: 2, h: 1}
+          kpis: [average_order_value]
+          decision_use: Explain whether order value is supporting or diluting sales growth.
+        - id: sales_customers_card
+          type: kpi_card
+          title: Active Customers
+          position: {x: 10, y: 0, w: 2, h: 1}
+          kpis: [active_customers]
+          decision_use: Show breadth of current posted commercial activity.
+        - id: sales_monthly_trend
+          type: line_and_clustered_column
+          title: Monthly Sales & Gross Profit Trend
+          position: {x: 0, y: 1, w: 8, h: 3}
+          axis:
+            category: dim_date.year_month
+            sort: ascending
+          kpis: [net_sales, gross_profit, sales_growth_pct]
+          encoding:
+            columns: [net_sales, gross_profit]
+            line: [sales_growth_pct]
+          decision_use: Connect sales direction with gross-profit delivery and year-over-year change.
+        - id: sales_category_driver
+          type: horizontal_bar
+          title: Net Sales by Product Category
+          position: {x: 8, y: 1, w: 4, h: 3}
+          axis:
+            category: dim_product.category_name
+          kpis: [net_sales]
+          sort:
+            by: net_sales
+            direction: descending
+          top_n: 10
+          decision_use: Identify categories making the largest sales contribution.
+        - id: sales_owner_matrix
+          type: matrix
+          title: Commercial Driver Detail
+          position: {x: 0, y: 4, w: 12, h: 3}
+          hierarchy:
+            rows:
+              - dim_salesperson.display_name
+              - dim_customer.customer_group
+              - dim_customer.customer_name
+          kpis: [net_sales, sales_growth_pct, units_sold, order_count, average_order_value, gross_margin_pct]
+          conditional_formatting:
+            - {kpi: sales_growth_pct, rule: diverging_zero}
+            - {kpi: gross_margin_pct, rule: heatmap}
+          decision_use: Drill from commercial owner to customer groups and customers to explain sales movement.
+
+    - id: margin_discount
+      name: Margin & Discount Intelligence
+      purpose: Explain gross-margin performance and expose discount and return leakage without extending into full cost-to-serve profitability.
+      business_questions:
+        - Is gross profit keeping pace with sales?
+        - Which categories or customers combine material sales with weak gross margin?
+        - Where are discount and return rates materially elevated?
+      visual_count: 9
+      visuals:
+        - id: margin_gp_card
+          type: kpi_card
+          title: Gross Profit
+          position: {x: 0, y: 0, w: 2, h: 1}
+          kpis: [gross_profit]
+          decision_use: Establish absolute gross-profit contribution.
+        - id: margin_gm_card
+          type: kpi_card
+          title: Gross Margin %
+          position: {x: 2, y: 0, w: 2, h: 1}
+          kpis: [gross_margin_pct]
+          decision_use: Track margin quality independent of sales scale.
+        - id: margin_discount_value_card
+          type: kpi_card
+          title: Discount Value
+          position: {x: 4, y: 0, w: 2, h: 1}
+          kpis: [discount_value]
+          decision_use: Quantify absolute discount leakage.
+        - id: margin_discount_rate_card
+          type: kpi_card
+          title: Discount Rate %
+          position: {x: 6, y: 0, w: 2, h: 1}
+          kpis: [discount_rate_pct]
+          decision_use: Compare discount intensity independently of sales volume.
+        - id: margin_return_value_card
+          type: kpi_card
+          title: Return Value
+          position: {x: 8, y: 0, w: 2, h: 1}
+          kpis: [return_value]
+          decision_use: Quantify value reversed through returns and credits.
+        - id: margin_return_rate_card
+          type: kpi_card
+          title: Return Rate %
+          position: {x: 10, y: 0, w: 2, h: 1}
+          kpis: [return_rate_pct]
+          decision_use: Compare return leakage independently of invoice-sales scale.
+        - id: margin_customer_scatter
+          type: scatter
+          title: Customer Sales vs Gross Margin
+          position: {x: 0, y: 1, w: 7, h: 3}
+          detail: dim_customer.customer_name
+          x: net_sales
+          y: gross_margin_pct
+          size: gross_profit
+          kpis: [net_sales, gross_margin_pct, gross_profit]
+          reference_lines:
+            - {metric: gross_margin_pct, method: overall_current_filter}
+          decision_use: Find material customers with below-context gross-margin performance.
+        - id: margin_leakage_category
+          type: clustered_bar
+          title: Discount & Return Leakage by Category
+          position: {x: 7, y: 1, w: 5, h: 3}
+          axis:
+            category: dim_product.category_name
+          kpis: [discount_value, return_value]
+          sort:
+            by: discount_value
+            direction: descending
+          decision_use: Identify categories where leakage values concentrate.
+        - id: margin_exception_table
+          type: table
+          title: Margin Attention List
+          position: {x: 0, y: 4, w: 12, h: 3}
+          rows:
+            - dim_customer.customer_name
+            - dim_product.category_name
+          kpis: [net_sales, gross_profit, gross_margin_pct, discount_rate_pct, return_rate_pct]
+          conditional_formatting:
+            - {kpi: gross_margin_pct, rule: low_is_attention}
+            - {kpi: discount_rate_pct, rule: high_is_attention}
+            - {kpi: return_rate_pct, rule: high_is_attention}
+          decision_use: Prioritize material sales relationships with weak margin or elevated leakage.
+          sql_validation_reference: semantic.v_sales_margin_exception_reference
+
+    - id: customer_product
+      name: Customer & Product Performance
+      purpose: Compare sales and gross-margin outcomes across customer and product hierarchies and support management drilldown to specific combinations.
+      business_questions:
+        - Which customers create the most sales and gross profit?
+        - Which products/categories produce strong sales but weak margin?
+        - Where do customer and product mix patterns explain performance differences?
+      visual_count: 6
+      visuals:
+        - id: cp_customer_rank
+          type: horizontal_bar
+          title: Top Customers by Net Sales
+          position: {x: 0, y: 0, w: 6, h: 3}
+          axis:
+            category: dim_customer.customer_name
+          kpis: [net_sales, gross_profit]
+          sort:
+            by: net_sales
+            direction: descending
+          top_n: 15
+          decision_use: Identify the most commercially material customer relationships.
+        - id: cp_product_rank
+          type: horizontal_bar
+          title: Top Products by Gross Profit
+          position: {x: 6, y: 0, w: 6, h: 3}
+          axis:
+            category: dim_product.product_name
+          kpis: [gross_profit, net_sales]
+          sort:
+            by: gross_profit
+            direction: descending
+          top_n: 15
+          decision_use: Identify products making the largest gross-profit contribution.
+        - id: cp_category_matrix
+          type: matrix
+          title: Category → Product Performance
+          position: {x: 0, y: 3, w: 6, h: 3}
+          hierarchy:
+            rows:
+              - dim_product.category_name
+              - dim_product.product_name
+          kpis: [net_sales, gross_profit, gross_margin_pct, discount_rate_pct, return_rate_pct]
+          conditional_formatting:
+            - {kpi: gross_margin_pct, rule: heatmap}
+          decision_use: Drill from category to product to explain margin and leakage differences.
+        - id: cp_customer_matrix
+          type: matrix
+          title: Customer Group → Customer Performance
+          position: {x: 6, y: 3, w: 6, h: 3}
+          hierarchy:
+            rows:
+              - dim_customer.customer_group
+              - dim_customer.customer_name
+          kpis: [net_sales, sales_growth_pct, gross_profit, gross_margin_pct, discount_rate_pct, return_rate_pct]
+          conditional_formatting:
+            - {kpi: sales_growth_pct, rule: diverging_zero}
+            - {kpi: gross_margin_pct, rule: heatmap}
+          decision_use: Compare customer groups and individual customers on growth, margin and leakage.
+        - id: cp_product_customer_scatter
+          type: scatter
+          title: Sales vs Margin by Product
+          position: {x: 0, y: 6, w: 7, h: 2}
+          detail: dim_product.product_name
+          x: net_sales
+          y: gross_margin_pct
+          size: gross_profit
+          kpis: [net_sales, gross_margin_pct, gross_profit]
+          decision_use: Surface high-sales products with weak margin quality.
+        - id: cp_detail_table
+          type: table
+          title: Customer × Product Detail
+          position: {x: 7, y: 6, w: 5, h: 2}
+          rows:
+            - dim_customer.customer_name
+            - dim_product.product_name
+          kpis: [net_sales, units_sold, gross_profit, gross_margin_pct]
+          decision_use: Provide the lowest-level commercial evidence behind selected drivers.
+
+  interaction_rules:
+    - Selecting a category filters all visuals on the active page.
+    - Selecting a customer or product cross-highlights compatible visuals.
+    - Global slicers persist across the three EOIP-08 pages.
+    - KPI cards always reflect the complete active filter context.
+    - Matrices allow expand/collapse but do not contain hidden KPI formulas.
+    - Tooltip content may reuse governed KPIs only; no new business measures are introduced.
+
+  validation:
+    sql_views:
+      - semantic.v_sales_margin_monthly_reference
+      - semantic.v_sales_margin_driver_reference
+      - semantic.v_sales_margin_exception_reference
+    required_page_ids:
+      - sales_performance
+      - margin_discount
+      - customer_product
+    forbidden_business_concepts:
+      - cost_to_serve
+      - contribution_margin
+      - customer_profitability_after_freight
+      - supplier_performance
