@@ -13,6 +13,11 @@ report:
     outer_margin: 24
     gap: 16
 
+  snapshot_context:
+    rule: Inventory pages always represent the latest available snapshot.
+    visible_context_note: "Inventory snapshot = latest available · Sales demand windows are trailing reference periods"
+    commercial_date_filter_behavior: ignored_for_inventory_kpis
+
   page_filters:
     - {id: product_category, field: dim_product.category_name, type: dropdown, default: all}
     - {id: warehouse, field: dim_warehouse.warehouse_name, type: dropdown, default: all}
@@ -170,6 +175,7 @@ report:
           title: Product Coverage vs Inventory Value
           position: {x: 5, y: 1, w: 7, h: 3}
           detail: dim_product.product_name
+          legend: dim_warehouse.warehouse_name
           x: stock_coverage_days
           y: inventory_value
           size: excess_inventory_value
@@ -224,6 +230,7 @@ report:
 
   interaction_rules:
     - Product category and warehouse selections cross-filter all compatible inventory visuals.
+    - A commercial date-range slicer must not be shown on Inventory pages; point-in-time Inventory measures ignore commercial date filters.
     - Inventory KPI cards always use the latest available snapshot.
     - Inventory date is point-in-time and is not presented as a historical inventory series in EOIP V1.
     - Selecting a category or warehouse should preserve context between Inventory Overview and Inventory Risk pages.
