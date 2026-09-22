@@ -1,0 +1,251 @@
+schema_version: 1
+report:
+  id: eoip-v1-inventory-intelligence
+  work_package: EOIP-09
+  status: power_bi_ready
+  purpose: Explain current inventory efficiency, working-capital exposure and known-demand availability risk without introducing optimization logic.
+
+  page_canvas:
+    aspect_ratio: "16:9"
+    width: 1440
+    height: 810
+    grid_columns: 12
+    outer_margin: 24
+    gap: 16
+
+  page_filters:
+    - {id: product_category, field: dim_product.category_name, type: dropdown, default: all}
+    - {id: warehouse, field: dim_warehouse.warehouse_name, type: dropdown, default: all}
+    - {id: product, field: dim_product.product_name, type: searchable_dropdown, default: all}
+
+  pages:
+    - id: inventory_overview
+      name: Inventory Overview
+      purpose: Explain where inventory value is concentrated and whether current stock is efficient relative to recent demand and COGS throughput.
+      business_questions:
+        - How much current working capital is tied up in inventory?
+        - Which categories and warehouses carry the most inventory value?
+        - Where is turnover weak or stock coverage unusually high?
+        - How much inventory is currently slow-moving, excess or exposed to stockout risk?
+      visual_count: 9
+      visuals:
+        - id: inv_value_card
+          type: kpi_card
+          title: Inventory Value
+          position: {x: 0, y: 0, w: 2, h: 1}
+          kpis: [inventory_value]
+          decision_use: Establish current positive inventory asset value.
+
+        - id: inv_turnover_card
+          type: kpi_card
+          title: Inventory Turnover
+          position: {x: 2, y: 0, w: 2, h: 1}
+          kpis: [inventory_turnover]
+          decision_use: Screen how efficiently current inventory supports recent COGS throughput.
+
+        - id: inv_coverage_card
+          type: kpi_card
+          title: Stock Coverage Days
+          position: {x: 4, y: 0, w: 2, h: 1}
+          kpis: [stock_coverage_days]
+          decision_use: Show current stock relative to recent positive invoice demand.
+
+        - id: inv_slow_card
+          type: kpi_card
+          title: Slow-Moving Inventory
+          position: {x: 6, y: 0, w: 2, h: 1}
+          kpis: [slow_moving_inventory_value]
+          decision_use: Quantify inventory with no positive invoice movement in the trailing 90 days.
+
+        - id: inv_excess_card
+          type: kpi_card
+          title: Excess Inventory
+          position: {x: 8, y: 0, w: 2, h: 1}
+          kpis: [excess_inventory_value]
+          decision_use: Quantify stock above the transparent EOIP 60-day coverage screening threshold.
+
+        - id: inv_stockout_card
+          type: kpi_card
+          title: Stockout-Risk SKUs
+          position: {x: 10, y: 0, w: 2, h: 1}
+          kpis: [stockout_risk_sku_count]
+          decision_use: Show distinct products whose open demand exceeds non-negative available stock.
+
+        - id: inv_category_value
+          type: horizontal_bar
+          title: Inventory Value by Category
+          position: {x: 0, y: 1, w: 5, h: 3}
+          axis:
+            category: dim_product.category_name
+          kpis: [inventory_value, excess_inventory_value]
+          sort:
+            by: inventory_value
+            direction: descending
+          sql_validation_reference: semantic.v_inventory_category_reference
+          decision_use: Identify categories that concentrate current working capital and excess exposure.
+
+        - id: inv_category_efficiency
+          type: scatter
+          title: Category Coverage vs Turnover
+          position: {x: 5, y: 1, w: 4, h: 3}
+          detail: dim_product.category_name
+          x: stock_coverage_days
+          y: inventory_turnover
+          size: inventory_value
+          kpis: [stock_coverage_days, inventory_turnover, inventory_value]
+          sql_validation_reference: semantic.v_inventory_category_reference
+          decision_use: Find categories with high coverage and weak turnover relative to current inventory value.
+
+        - id: inv_warehouse_matrix
+          type: matrix
+          title: Warehouse Inventory Position
+          position: {x: 9, y: 1, w: 3, h: 3}
+          hierarchy:
+            rows:
+              - dim_warehouse.warehouse_name
+          kpis:
+            - inventory_value
+            - inventory_turnover
+            - stock_coverage_days
+            - stockout_risk_sku_count
+          conditional_formatting:
+            - {kpi: stock_coverage_days, rule: high_is_attention}
+            - {kpi: stockout_risk_sku_count, rule: nonzero_is_attention}
+          sql_validation_reference: semantic.v_inventory_warehouse_reference
+          decision_use: Compare inventory efficiency and availability exposure across warehouses.
+
+    - id: inventory_risk
+      name: Inventory Risk & Working Capital
+      purpose: Prioritize current product and warehouse positions with slow-moving, excess or known-demand stockout conditions.
+      business_questions:
+        - Where is slow-moving and excess inventory concentrated?
+        - Which positions combine large inventory value with high stock coverage?
+        - Which products cannot currently cover known open demand?
+        - Which product and warehouse combinations deserve management review?
+      visual_count: 8
+      visuals:
+        - id: risk_slow_card
+          type: kpi_card
+          title: Slow-Moving Inventory
+          position: {x: 0, y: 0, w: 3, h: 1}
+          kpis: [slow_moving_inventory_value]
+          decision_use: Quantify weak-movement working-capital exposure.
+
+        - id: risk_excess_card
+          type: kpi_card
+          title: Excess Inventory
+          position: {x: 3, y: 0, w: 3, h: 1}
+          kpis: [excess_inventory_value]
+          decision_use: Quantify stock above the EOIP 60-day screening threshold.
+
+        - id: risk_stockout_card
+          type: kpi_card
+          title: Stockout-Risk SKUs
+          position: {x: 6, y: 0, w: 3, h: 1}
+          kpis: [stockout_risk_sku_count]
+          decision_use: Show breadth of known-demand availability exposure.
+
+        - id: risk_inventory_card
+          type: kpi_card
+          title: Inventory Value
+          position: {x: 9, y: 0, w: 3, h: 1}
+          kpis: [inventory_value]
+          decision_use: Keep working-capital scale visible while reviewing risks.
+
+        - id: risk_excess_category
+          type: horizontal_bar
+          title: Excess Inventory by Category
+          position: {x: 0, y: 1, w: 5, h: 3}
+          axis:
+            category: dim_product.category_name
+          kpis: [excess_inventory_value, inventory_value]
+          sort:
+            by: excess_inventory_value
+            direction: descending
+          sql_validation_reference: semantic.v_inventory_category_reference
+          decision_use: Prioritize categories with the largest current excess exposure.
+
+        - id: risk_position_scatter
+          type: scatter
+          title: Product Coverage vs Inventory Value
+          position: {x: 5, y: 1, w: 7, h: 3}
+          detail: dim_product.product_name
+          x: stock_coverage_days
+          y: inventory_value
+          size: excess_inventory_value
+          kpis: [stock_coverage_days, inventory_value, excess_inventory_value]
+          decision_use: Surface high-value product positions with high coverage and excess stock.
+
+        - id: risk_warehouse_matrix
+          type: matrix
+          title: Warehouse Risk Summary
+          position: {x: 0, y: 4, w: 4, h: 3}
+          hierarchy:
+            rows:
+              - dim_warehouse.warehouse_name
+          kpis:
+            - inventory_value
+            - slow_moving_inventory_value
+            - excess_inventory_value
+            - stockout_risk_sku_count
+          conditional_formatting:
+            - {kpi: excess_inventory_value, rule: high_is_attention}
+            - {kpi: stockout_risk_sku_count, rule: nonzero_is_attention}
+          sql_validation_reference: semantic.v_inventory_warehouse_reference
+          decision_use: Compare working-capital and availability risk across warehouses.
+
+        - id: risk_detail_table
+          type: table
+          title: Product × Warehouse Attention Detail
+          position: {x: 4, y: 4, w: 8, h: 3}
+          rows:
+            - dim_product.category_name
+            - dim_product.product_name
+            - dim_warehouse.warehouse_name
+          kpis:
+            - inventory_value
+            - stock_coverage_days
+            - excess_inventory_value
+            - stockout_risk_sku_count
+          supplemental_fields:
+            - available_quantity
+            - open_order_quantity
+            - days_since_last_positive_sale
+            - slow_moving_flag
+            - stockout_risk_flag
+          sql_validation_reference: semantic.v_inventory_risk_detail_reference
+          decision_use: Provide the exact product/warehouse evidence behind current working-capital and availability attention signals.
+
+  navigation:
+    targets:
+      - {page_id: executive_overview, label: Back to Executive Overview}
+      - {page_id: sales_performance, label: Open Sales Performance}
+    preserve_filter_context: true
+
+  interaction_rules:
+    - Product category and warehouse selections cross-filter all compatible inventory visuals.
+    - Inventory KPI cards always use the latest available snapshot.
+    - Inventory date is point-in-time and is not presented as a historical inventory series in EOIP V1.
+    - Selecting a category or warehouse should preserve context between Inventory Overview and Inventory Risk pages.
+    - No visual contains ABC/XYZ, safety-stock, reorder-point or forecast logic.
+    - No visual interprets Excess Inventory Value as realized working-capital savings.
+
+  validation:
+    sql_views:
+      - semantic.v_inventory_reporting_position
+      - semantic.v_inventory_category_reference
+      - semantic.v_inventory_warehouse_reference
+      - semantic.v_inventory_risk_detail_reference
+    required_kpis:
+      - inventory_value
+      - inventory_turnover
+      - stock_coverage_days
+      - slow_moving_inventory_value
+      - excess_inventory_value
+      - stockout_risk_sku_count
+    forbidden_business_concepts:
+      - abc_xyz
+      - safety_stock
+      - reorder_point
+      - demand_forecast
+      - optimized_order_quantity
