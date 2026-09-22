@@ -39,10 +39,14 @@ CALCULATE(
 
 COGS TTM :=
 VAR SnapshotDate =
-    MAX('inventory_position'[snapshot_date])
+    CALCULATE(
+        MAX('inventory_position'[snapshot_date]),
+        REMOVEFILTERS('dim_date')
+    )
 RETURN
     CALCULATE(
         [COGS],
+        REMOVEFILTERS('dim_date'),
         DATESINPERIOD(
             'dim_date'[full_date],
             SnapshotDate,
@@ -110,7 +114,10 @@ DIVIDE(
 )
 
 Inventory Value :=
-SUM('inventory_position'[positive_inventory_value])
+CALCULATE(
+    SUM('inventory_position'[positive_inventory_value]),
+    REMOVEFILTERS('dim_date')
+)
 
 Inventory Turnover :=
 DIVIDE(
@@ -119,22 +126,30 @@ DIVIDE(
 )
 
 Stock Coverage Days :=
-DIVIDE(
-    SUM('inventory_position'[on_hand_quantity]),
-    SUM('inventory_position'[average_daily_units_90d])
+CALCULATE(
+    DIVIDE(
+        SUM('inventory_position'[on_hand_quantity]),
+        SUM('inventory_position'[average_daily_units_90d])
+    ),
+    REMOVEFILTERS('dim_date')
 )
 
 Slow-Moving Inventory Value :=
 CALCULATE(
     [Inventory Value],
+    REMOVEFILTERS('dim_date'),
     'inventory_position'[slow_moving_flag] = TRUE()
 )
 
 Excess Inventory Value :=
-SUM('inventory_position'[excess_inventory_value_60d])
+CALCULATE(
+    SUM('inventory_position'[excess_inventory_value_60d]),
+    REMOVEFILTERS('dim_date')
+)
 
 Stockout-Risk SKU Count :=
 CALCULATE(
     DISTINCTCOUNT('inventory_position'[product_key]),
+    REMOVEFILTERS('dim_date'),
     'inventory_position'[stockout_risk_flag] = TRUE()
 )
