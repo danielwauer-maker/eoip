@@ -21,6 +21,11 @@ page:
     outer_margin: 24
     gap: 16
 
+  semantic_context:
+    commercial_period: Selected date range controls Sales and Margin measures.
+    inventory_snapshot: Inventory measures always show the latest available snapshot and ignore the commercial date-range filter.
+    visible_context_note: "Sales/Margin = selected period · Inventory = latest snapshot"
+
   global_filters:
     - {id: date_range, field: dim_date.full_date, type: between, default: latest_12_complete_months}
     - {id: customer_group, field: dim_customer.customer_group, type: dropdown, default: all}
@@ -128,7 +133,7 @@ page:
 
   interaction_rules:
     - Category selection cross-filters compatible Executive visuals.
-    - KPI cards always reflect the complete active filter context.
+    - Commercial KPI cards reflect the active date context; point-in-time Inventory KPI cards explicitly ignore the commercial date-range filter.
     - Selecting a category in Management Attention should preserve category context when navigating to detail pages.
     - No visual contains a hidden replacement KPI formula.
     - Attention flags are screening rules only and are never shown as business-impact claims.

@@ -196,12 +196,16 @@ report:
           decision_use: Identify categories where leakage values concentrate.
         - id: margin_exception_table
           type: table
-          title: Margin Attention List
+          title: Customer Margin Attention
           position: {x: 0, y: 4, w: 12, h: 3}
           rows:
             - dim_customer.customer_name
-            - dim_product.category_name
           kpis: [net_sales, gross_profit, gross_margin_pct, discount_rate_pct, return_rate_pct]
+          validation_filter: {field: entity_type, equals: customer}
+          top_n: 12
+          sort:
+            by: net_sales
+            direction: descending
           conditional_formatting:
             - {kpi: gross_margin_pct, rule: low_is_attention}
             - {kpi: discount_rate_pct, rule: high_is_attention}
@@ -228,7 +232,7 @@ report:
           sort:
             by: net_sales
             direction: descending
-          top_n: 15
+          top_n: 10
           decision_use: Identify the most commercially material customer relationships.
         - id: cp_product_rank
           type: horizontal_bar
@@ -240,7 +244,7 @@ report:
           sort:
             by: gross_profit
             direction: descending
-          top_n: 15
+          top_n: 10
           decision_use: Identify products making the largest gross-profit contribution.
         - id: cp_category_matrix
           type: matrix
