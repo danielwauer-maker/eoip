@@ -6,6 +6,7 @@ from eoip.powerbi import (
     load_measure_metadata,
     parse_dax_measures,
     render_measure_table_tmdl,
+    stable_lineage_tag,
 )
 
 
@@ -76,6 +77,12 @@ def test_measure_metadata_is_complete_and_governed():
     }
 
 
+def test_lineage_tags_are_deterministic():
+    assert stable_lineage_tag("table:_Measures") == "9fc44ed7-5364-59c7-9217-d1e79642a344"
+    assert stable_lineage_tag("measure:Gross Margin %") == "4466e5b6-7d10-5b32-89bb-ecee847f5bb7"
+    assert stable_lineage_tag("column:_Measures.Value") == "fe5d3f32-cf06-53f5-b112-17b1be749d0e"
+
+
 def test_committed_measure_table_is_generated_from_canonical_sources():
     measures = parse_dax_measures(DAX.read_text(encoding="utf-8"))
     metadata = load_measure_metadata(CATALOG)
@@ -88,18 +95,25 @@ def test_committed_measure_table_is_generated_from_canonical_sources():
 def test_generated_tmdl_contains_formatting_folders_and_hidden_helpers():
     text = TMDL.read_text(encoding="utf-8")
 
-    assert "measure 'Gross Sales'" in text
+    assert "table _Measures" in text
+    assert "lineageTag: 9fc44ed7-5364-59c7-9217-d1e79642a344" in text
+
+    assert "measure COGS = SUM('fact_sales'[cogs_signed])" in text
+    assert "measure 'Gross Sales' = SUM('fact_sales'[gross_sales_signed])" in text
+
     assert "formatString: €#,##0.00" in text
-    assert 'displayFolder: "_Helpers"' in text
+    assert "displayFolder: _Helpers" in text
     assert "isHidden" in text
 
-    assert "measure 'Gross Margin %'" in text
+    assert "measure 'Gross Margin %' =" in text
     assert "formatString: 0.0%" in text
-    assert 'displayFolder: "02 Margin"' in text
+    assert "displayFolder: 02 Margin" in text
 
-    assert "measure 'Stockout-Risk SKU Count'" in text
+    assert "measure 'Stockout-Risk SKU Count' =" in text
     assert "formatString: #,##0" in text
-    assert 'displayFolder: "03 Inventory"' in text
+    assert "displayFolder: 03 Inventory" in text
+
+    assert text.count("lineageTag: ") == 28
 
 
 def test_semantic_model_references_generated_measure_table():
