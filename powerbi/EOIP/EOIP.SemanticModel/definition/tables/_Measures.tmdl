@@ -1,64 +1,61 @@
 table _Measures
+	lineageTag: 9fc44ed7-5364-59c7-9217-d1e79642a344
 
-	measure 'Gross Sales' = ```
-			SUM('fact_sales'[gross_sales_signed])
-			```
+	measure 'Gross Sales' = SUM('fact_sales'[gross_sales_signed])
 		formatString: €#,##0.00
-		displayFolder: "_Helpers"
 		isHidden
+		displayFolder: _Helpers
+		lineageTag: e82e5ff1-25ca-54e3-a372-b5261570662b
 
-	measure 'Net Sales Base' = ```
-			SUM('fact_sales'[net_sales_signed])
-			```
+	measure 'Net Sales Base' = SUM('fact_sales'[net_sales_signed])
 		formatString: €#,##0.00
-		displayFolder: "_Helpers"
 		isHidden
+		displayFolder: _Helpers
+		lineageTag: f665838c-1ef4-58ae-9a1e-e6b2a42b0b5b
 
-	measure 'COGS' = ```
-			SUM('fact_sales'[cogs_signed])
-			```
+	measure COGS = SUM('fact_sales'[cogs_signed])
 		formatString: €#,##0.00
-		displayFolder: "_Helpers"
 		isHidden
+		displayFolder: _Helpers
+		lineageTag: 0e5cc65e-5e7b-50dd-803f-778439e7dbc6
 
-	measure 'Ordered Net Value' = ```
-			SUM('fact_sales_order'[net_order_amount])
-			```
+	measure 'Ordered Net Value' = SUM('fact_sales_order'[net_order_amount])
 		formatString: €#,##0.00
-		displayFolder: "_Helpers"
 		isHidden
+		displayFolder: _Helpers
+		lineageTag: aba45dec-0534-56c5-af8f-9a717ba70ffb
 
-	measure 'Invoice Sales' = ```
+	measure 'Invoice Sales' =
 			CALCULATE(
 			    [Net Sales Base],
 			    'fact_sales'[source_document_type] = "invoice"
 			)
-			```
 		formatString: €#,##0.00
-		displayFolder: "_Helpers"
 		isHidden
+		displayFolder: _Helpers
+		lineageTag: f9773a92-9e96-5da1-92e8-4e56b3e7923d
 
-	measure 'Credit Memo Sales' = ```
+	measure 'Credit Memo Sales' =
 			CALCULATE(
 			    [Net Sales Base],
 			    'fact_sales'[source_document_type] = "credit_memo"
 			)
-			```
 		formatString: €#,##0.00
-		displayFolder: "_Helpers"
 		isHidden
+		displayFolder: _Helpers
+		lineageTag: e3e684e5-7e75-57ea-b01b-eb225458f4ab
 
-	measure 'Net Sales PY' = ```
+	measure 'Net Sales PY' =
 			CALCULATE(
 			    [Net Sales],
 			    DATEADD('dim_date'[full_date], -1, YEAR)
 			)
-			```
 		formatString: €#,##0.00
-		displayFolder: "_Helpers"
 		isHidden
+		displayFolder: _Helpers
+		lineageTag: a7cc82f9-5cc5-53e8-857b-54da6fcb1b0d
 
-	measure 'COGS TTM' = ```
+	measure 'COGS TTM' =
 			VAR SnapshotDate =
 			    CALCULATE(
 			        MAX('inventory_position'[snapshot_date]),
@@ -75,120 +72,114 @@ table _Measures
 			            DAY
 			        )
 			    )
-			```
 		formatString: €#,##0.00
-		displayFolder: "_Helpers"
 		isHidden
+		displayFolder: _Helpers
+		lineageTag: 6df20dcf-769f-5e1e-b671-9e38e839c506
 
-	measure 'Net Sales' = ```
-			[Net Sales Base]
-			```
+	measure 'Net Sales' = [Net Sales Base]
 		formatString: €#,##0.00
-		displayFolder: "01 Sales"
+		displayFolder: 01 Sales
+		lineageTag: b68e880e-5642-5811-b1eb-0ae732cb59f9
 
-	measure 'Sales Growth %' = ```
+	measure 'Sales Growth %' =
 			DIVIDE(
 			    [Net Sales] - [Net Sales PY],
 			    ABS([Net Sales PY])
 			)
-			```
 		formatString: 0.0%
-		displayFolder: "01 Sales"
+		displayFolder: 01 Sales
+		lineageTag: 3307cdcd-6bba-5865-a4cb-8cf9f23c44bd
 
-	measure 'Gross Profit' = ```
-			[Net Sales] - [COGS]
-			```
+	measure 'Gross Profit' = [Net Sales] - [COGS]
 		formatString: €#,##0.00
-		displayFolder: "02 Margin"
+		displayFolder: 02 Margin
+		lineageTag: 33812972-5490-5330-a9da-9a1f23c110d8
 
-	measure 'Gross Margin %' = ```
+	measure 'Gross Margin %' =
 			DIVIDE(
 			    [Gross Profit],
 			    [Net Sales]
 			)
-			```
 		formatString: 0.0%
-		displayFolder: "02 Margin"
+		displayFolder: 02 Margin
+		lineageTag: 4466e5b6-7d10-5b32-89bb-ecee847f5bb7
 
-	measure 'Order Count' = ```
-			DISTINCTCOUNT('fact_sales_order'[sales_order_id])
-			```
+	measure 'Order Count' = DISTINCTCOUNT('fact_sales_order'[sales_order_id])
 		formatString: #,##0
-		displayFolder: "01 Sales"
+		displayFolder: 01 Sales
+		lineageTag: bda7f174-905d-5eb2-8a73-e492694e9de9
 
-	measure 'Average Order Value' = ```
+	measure 'Average Order Value' =
 			DIVIDE(
 			    [Ordered Net Value],
 			    [Order Count]
 			)
-			```
 		formatString: €#,##0.00
-		displayFolder: "01 Sales"
+		displayFolder: 01 Sales
+		lineageTag: 3dc59e11-cc9a-580b-9e43-97bb53e008ea
 
-	measure 'Active Customers' = ```
+	measure 'Active Customers' =
 			CALCULATE(
 			    DISTINCTCOUNT('fact_sales'[customer_key]),
 			    'fact_sales'[net_sales_signed] <> 0
 			)
-			```
 		formatString: #,##0
-		displayFolder: "01 Sales"
+		displayFolder: 01 Sales
+		lineageTag: c2b80645-9bb1-5848-955d-d72326281f20
 
-	measure 'Units Sold' = ```
-			SUM('fact_sales'[quantity_signed])
-			```
+	measure 'Units Sold' = SUM('fact_sales'[quantity_signed])
 		formatString: #,##0
-		displayFolder: "01 Sales"
+		displayFolder: 01 Sales
+		lineageTag: ce297e91-094b-5712-99ac-61c7909af046
 
-	measure 'Discount Value' = ```
-			SUM('fact_sales'[discount_signed])
-			```
+	measure 'Discount Value' = SUM('fact_sales'[discount_signed])
 		formatString: €#,##0.00
-		displayFolder: "02 Margin"
+		displayFolder: 02 Margin
+		lineageTag: 08a6a4fc-5d8e-5127-b891-cfe3a1db0f68
 
-	measure 'Discount Rate %' = ```
+	measure 'Discount Rate %' =
 			DIVIDE(
 			    [Discount Value],
 			    [Gross Sales]
 			)
-			```
 		formatString: 0.0%
-		displayFolder: "02 Margin"
+		displayFolder: 02 Margin
+		lineageTag: c919b3a3-617e-50bb-8db8-50432bbaa783
 
-	measure 'Return Value' = ```
-			-[Credit Memo Sales]
-			```
+	measure 'Return Value' = -[Credit Memo Sales]
 		formatString: €#,##0.00
-		displayFolder: "02 Margin"
+		displayFolder: 02 Margin
+		lineageTag: 7fac62c0-63d0-57bb-a2cf-04f77e1d8440
 
-	measure 'Return Rate %' = ```
+	measure 'Return Rate %' =
 			DIVIDE(
 			    [Return Value],
 			    [Invoice Sales]
 			)
-			```
 		formatString: 0.0%
-		displayFolder: "02 Margin"
+		displayFolder: 02 Margin
+		lineageTag: fbaa5b9a-7d5e-52a2-8663-0c7eef712e6b
 
-	measure 'Inventory Value' = ```
+	measure 'Inventory Value' =
 			CALCULATE(
 			    SUM('inventory_position'[positive_inventory_value]),
 			    REMOVEFILTERS('dim_date')
 			)
-			```
 		formatString: €#,##0.00
-		displayFolder: "03 Inventory"
+		displayFolder: 03 Inventory
+		lineageTag: 0174ebac-e901-5147-8b15-07ca373b4146
 
-	measure 'Inventory Turnover' = ```
+	measure 'Inventory Turnover' =
 			DIVIDE(
 			    [COGS TTM],
 			    [Inventory Value]
 			)
-			```
 		formatString: 0.00
-		displayFolder: "03 Inventory"
+		displayFolder: 03 Inventory
+		lineageTag: b3f91cdf-889f-550a-928f-4eb902bd506a
 
-	measure 'Stock Coverage Days' = ```
+	measure 'Stock Coverage Days' =
 			CALCULATE(
 			    DIVIDE(
 			        SUM('inventory_position'[on_hand_quantity]),
@@ -196,43 +187,44 @@ table _Measures
 			    ),
 			    REMOVEFILTERS('dim_date')
 			)
-			```
 		formatString: 0.0
-		displayFolder: "03 Inventory"
+		displayFolder: 03 Inventory
+		lineageTag: 1b1cb344-9df4-5b34-a188-b42af574a5f0
 
-	measure 'Slow-Moving Inventory Value' = ```
+	measure 'Slow-Moving Inventory Value' =
 			CALCULATE(
 			    [Inventory Value],
 			    REMOVEFILTERS('dim_date'),
 			    'inventory_position'[slow_moving_flag] = TRUE()
 			)
-			```
 		formatString: €#,##0.00
-		displayFolder: "03 Inventory"
+		displayFolder: 03 Inventory
+		lineageTag: be21dc19-ad20-5684-8f67-af587260c5e0
 
-	measure 'Excess Inventory Value' = ```
+	measure 'Excess Inventory Value' =
 			CALCULATE(
 			    SUM('inventory_position'[excess_inventory_value_60d]),
 			    REMOVEFILTERS('dim_date')
 			)
-			```
 		formatString: €#,##0.00
-		displayFolder: "03 Inventory"
+		displayFolder: 03 Inventory
+		lineageTag: 22c33b7b-172f-569e-8584-157b876c9118
 
-	measure 'Stockout-Risk SKU Count' = ```
+	measure 'Stockout-Risk SKU Count' =
 			CALCULATE(
 			    DISTINCTCOUNT('inventory_position'[product_key]),
 			    REMOVEFILTERS('dim_date'),
 			    'inventory_position'[stockout_risk_flag] = TRUE()
 			)
-			```
 		formatString: #,##0
-		displayFolder: "03 Inventory"
+		displayFolder: 03 Inventory
+		lineageTag: 77c6da51-3554-57e1-878d-35eb8fc6a658
 
 	column Value
 		dataType: int64
 		isHidden
 		formatString: 0
+		lineageTag: fe5d3f32-cf06-53f5-b112-17b1be749d0e
 		summarizeBy: sum
 		sourceColumn: [Value]
 
