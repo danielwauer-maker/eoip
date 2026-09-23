@@ -171,7 +171,7 @@ def render_measure_table_tmdl(
             "",
         ]
     )
-    return "\n".join(lines)
+    return "\n".join(lines) + "\n"
 
 
 def sync_powerbi_measures(
