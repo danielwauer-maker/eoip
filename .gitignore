@@ -13,5 +13,6 @@ data/dw-validation.json
 
 # Power BI Project local/binary artifacts
 **/.pbi/localSettings.json
+**/.pbi/editorSettings.json
 **/.pbi/cache.abf
 powerbi/**/*.pbix
