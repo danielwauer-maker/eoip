@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,11 @@ from .semantic import load_kpi_catalog
 
 
 _MEASURE_HEADER = re.compile(r"^(.+?)\s*:=\s*$")
+_SIMPLE_TMDL_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+# Stable namespace for PBIP runtime identities. UUID5 keeps lineage tags
+# deterministic across machines and repeated generator runs.
+_LINEAGE_NAMESPACE = uuid.UUID("0a2529a7-c2fe-5cc3-a671-10e1d261c5bd")
 
 FORMAT_STRINGS = {
     "currency_eur": "€#,##0.00",
@@ -93,36 +99,60 @@ def load_measure_metadata(catalog_path: str | Path) -> dict[str, dict[str, Any]]
     return metadata
 
 
+def stable_lineage_tag(identity: str) -> str:
+    """Return a stable GUID for a generated PBIP semantic-model object."""
+    return str(uuid.uuid5(_LINEAGE_NAMESPACE, identity))
+
+
+def _tmdl_identifier(value: str) -> str:
+    if _SIMPLE_TMDL_IDENTIFIER.fullmatch(value):
+        return value
+    return "'" + value.replace("'", "''") + "'"
+
+
 def render_measure_table_tmdl(
     measures: list[tuple[str, str]],
     *,
     metadata: dict[str, dict[str, Any]] | None = None,
     table_name: str = "_Measures",
 ) -> str:
-    """Render a measure-only calculated table for the PBIP semantic model."""
+    """Render Power BI-normalized TMDL for the generated measure table."""
     metadata = metadata or {}
-    lines: list[str] = [f"table {table_name}", ""]
+    table_identifier = _tmdl_identifier(table_name)
+    lines: list[str] = [
+        f"table {table_identifier}",
+        f"\tlineageTag: {stable_lineage_tag(f'table:{table_name}')}",
+        "",
+    ]
 
     for name, expression in measures:
-        safe_name = name.replace("'", "''")
-        lines.append(f"\tmeasure '{safe_name}' = ```")
-        for expression_line in expression.splitlines():
-            lines.append(f"\t\t\t{expression_line}")
-        lines.append("\t\t\t```")
+        measure_identifier = _tmdl_identifier(name)
+        expression_lines = expression.splitlines()
+
+        if len(expression_lines) == 1:
+            lines.append(
+                f"\tmeasure {measure_identifier} = {expression_lines[0]}"
+            )
+        else:
+            lines.append(f"\tmeasure {measure_identifier} =")
+            for expression_line in expression_lines:
+                lines.append(f"\t\t\t{expression_line}")
 
         props = metadata.get(name, {})
         format_string = props.get("format_string")
         if format_string:
             lines.append(f"\t\tformatString: {format_string}")
 
-        display_folder = props.get("display_folder")
-        if display_folder:
-            escaped_folder = str(display_folder).replace('"', '""')
-            lines.append(f'\t\tdisplayFolder: "{escaped_folder}"')
-
         if props.get("hidden"):
             lines.append("\t\tisHidden")
 
+        display_folder = props.get("display_folder")
+        if display_folder:
+            lines.append(f"\t\tdisplayFolder: {display_folder}")
+
+        lines.append(
+            f"\t\tlineageTag: {stable_lineage_tag(f'measure:{name}')}"
+        )
         lines.append("")
 
     lines.extend(
@@ -131,10 +161,11 @@ def render_measure_table_tmdl(
             "\t\tdataType: int64",
             "\t\tisHidden",
             "\t\tformatString: 0",
+            f"\t\tlineageTag: {stable_lineage_tag(f'column:{table_name}.Value')}",
             "\t\tsummarizeBy: sum",
             "\t\tsourceColumn: [Value]",
             "",
-            f"\tpartition {table_name} = calculated",
+            f"\tpartition {table_identifier} = calculated",
             "\t\tmode: import",
             "\t\tsource = {1}",
             "",
