@@ -85,6 +85,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="powerbi/EOIP/EOIP.SemanticModel/definition/tables/_Measures.tmdl",
         help="Generated PBIP TMDL measure-table output.",
     )
+    sync_measures.add_argument(
+        "--catalog",
+        default="semantic/kpi-catalog.yaml",
+        help="Governed KPI catalog providing measure format and visibility metadata.",
+    )
 
     return parser
 
@@ -183,7 +188,11 @@ def run_build_dw(args: argparse.Namespace) -> int:
 
 
 def run_sync_powerbi_measures(args: argparse.Namespace) -> int:
-    result = sync_powerbi_measures(args.dax, args.output)
+    result = sync_powerbi_measures(
+        args.dax,
+        args.output,
+        catalog_path=args.catalog,
+    )
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 

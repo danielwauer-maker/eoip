@@ -39,22 +39,52 @@ kpi_catalog:
   base_measures:
     - id: gross_sales_base
       name: Gross Sales
+      format: currency_eur
+      hidden: true
+      display_folder: _Helpers
       dax: "SUM('fact_sales'[gross_sales_signed])"
     - id: net_sales_base
       name: Net Sales Base
+      format: currency_eur
+      hidden: true
+      display_folder: _Helpers
       dax: "SUM('fact_sales'[net_sales_signed])"
     - id: cogs_base
       name: COGS
+      format: currency_eur
+      hidden: true
+      display_folder: _Helpers
       dax: "SUM('fact_sales'[cogs_signed])"
     - id: ordered_net_value_base
       name: Ordered Net Value
+      format: currency_eur
+      hidden: true
+      display_folder: _Helpers
       dax: "SUM('fact_sales_order'[net_order_amount])"
     - id: invoice_sales_base
       name: Invoice Sales
+      format: currency_eur
+      hidden: true
+      display_folder: _Helpers
       dax: "CALCULATE([Net Sales Base], 'fact_sales'[source_document_type] = \"invoice\")"
     - id: return_sales_base
       name: Credit Memo Sales
+      format: currency_eur
+      hidden: true
+      display_folder: _Helpers
       dax: "CALCULATE([Net Sales Base], 'fact_sales'[source_document_type] = \"credit_memo\")"
+    - id: net_sales_py_helper
+      name: Net Sales PY
+      format: currency_eur
+      hidden: true
+      display_folder: _Helpers
+      dax: "CALCULATE([Net Sales], DATEADD('dim_date'[full_date], -1, YEAR))"
+    - id: cogs_ttm_helper
+      name: COGS TTM
+      format: currency_eur
+      hidden: true
+      display_folder: _Helpers
+      dax: "Trailing 365-day COGS ending at the latest inventory snapshot."
 
   kpis:
     - id: net_sales
